@@ -1,0 +1,274 @@
+import { state, saveState } from '../state.js';
+import { SESSIONS, sessionFor } from '../sessions.js';
+import { TOTAL_DAYS, dateForDay, todayNum, dayIsComplete, isHardcodedDeload, weekOf, resolveSlots, shortDate } from '../helpers.js';
+import { dashboardKpis, weeklyReview, macroWeeklySeries, goalPace } from '../dashboardMetrics.js';
+import { confBadge } from './components.js';
+import { weeklyVolume, kneeLoadForSession, weekPRSummary, weeklyVolumeSeries, prTimeline, PR_LABELS } from '../trainingMetrics.js';
+
+export function renderOverview(switchTab) {
+  let kracht = 0, cardio = 0;
+  for (let i = 1; i <= TOTAL_DAYS; i++) {
+    const code = sessionFor(dateForDay(i));
+    if (!dayIsComplete(i)) continue;
+    if (code.startsWith('K')) kracht++;
+    else if (code.startsWith('C')) cardio++;
+  }
+  document.getElementById('sKracht').textContent = kracht;
+  document.getElementById('sCardio').textContent = cardio;
+
+  let streak = 0;
+  for (let i = todayNum(); i >= 1; i--) {
+    if (dayIsComplete(i)) streak++; else break;
+  }
+  document.getElementById('sStreak').textContent = streak;
+  renderDashboard();
+  renderTrainingIntel();
+  renderProgressIntel();
+
+  const content = document.getElementById('overviewContent');
+  const today = todayNum();
+  let html = '';
+  for (let w = 0; w < 13; w++) {
+    const weekStart = w * 7 + 1;
+    const isDel = isHardcodedDeload(weekStart) || isHardcodedDeload(weekStart + 3) || state.suggestedDeload['w' + (w + 1)] === true;
+    html += `<div class="dna-week ${isDel ? 'deload' : ''}">
+      <div class="wk-label">W${w + 1}${isDel ? '<small>deload</small>' : ''}</div>`;
+    for (let d = 0; d < 7; d++) {
+      const dayN = weekStart + d;
+      if (dayN > TOTAL_DAYS) { html += '<div class="cell empty"></div>'; continue; }
+      const code = sessionFor(dateForDay(dayN));
+      const shape = code.startsWith('K') ? 'str' : code.startsWith('C') ? 'car' : 'rst';
+      let cls = 'cell ' + shape;
+      if (dayIsComplete(dayN)) cls += ' done';
+      if (dayN === today) cls += ' today';
+      if (dayN > today) cls += ' future';
+      html += `<div class="${cls}" data-day="${dayN}" title="Dag ${dayN}"><span class="glyph"></span></div>`;
+    }
+    html += `</div>`;
+  }
+  content.innerHTML = html;
+  content.querySelectorAll('.cell[data-day]').forEach(el => {
+    el.onclick = () => {
+      state.viewDay = +el.dataset.day;
+      saveState();
+      switchTab('today');
+    };
+  });
+}
+
+function renderDashboard() {
+  const kpiWrap = document.getElementById('dashboardKpis');
+  const reviewWrap = document.getElementById('weeklyReview');
+  if (!kpiWrap || !reviewWrap) return;
+
+  kpiWrap.innerHTML = dashboardKpis().map(kpi => `
+    <div class="kpi ${kpi.tone}">
+      <div class="kpi-label">${kpi.label} ${confBadge(kpi.confidence)}</div>
+      <div class="kpi-value">${kpi.value}</div>
+      <div class="kpi-sub">${kpi.sub}</div>
+    </div>
+  `).join('');
+
+  const review = weeklyReview();
+  reviewWrap.innerHTML = `
+    <div class="review-head">
+      <h3>Week ${review.week.week} rapport</h3>
+      <span>${review.week.start}-${review.week.end}</span>
+    </div>
+    <div class="review-list">
+      ${review.items.map(item => `
+        <div class="review-item ${item.tone}">
+          <div class="ri-dot"></div>
+          <div><b>${item.title} ${confBadge(item.confidence)}</b><span>${item.text}</span></div>
+        </div>
+      `).join('')}
+    </div>
+    ${review.recommendation ? `<div class="review-rec"><span class="rr-ic">→</span><span>${review.recommendation}</span></div>` : ''}`;
+}
+
+// ---- Trainingsintelligentie -------------------------------------------------
+
+function fmtVol(v) {
+  if (v >= 1000) return (v / 1000).toFixed(1).replace('.', ',') + 'k';
+  return Math.round(v).toString();
+}
+
+function deltaChip(delta) {
+  if (delta === null) return '<span class="ti-delta flat">eerste week</span>';
+  const pct = Math.round(delta * 100);
+  const tone = pct > 2 ? 'up' : pct < -2 ? 'down' : 'flat';
+  const sign = pct > 0 ? '+' : '';
+  return `<span class="ti-delta ${tone}">${sign}${pct}% vs vorige week</span>`;
+}
+
+const KNEE_BAND = {
+  low:    { tone: 'good', label: 'Laag',   text: 'Vooral knievriendelijke arbeid.' },
+  medium: { tone: 'warn', label: 'Matig',  text: 'Directe quad-belasting deze sessie.' },
+  high:   { tone: 'bad',  label: 'Hoog',   text: 'Knie-onvriendelijke oefening(en) belast.' }
+};
+
+// Verticale mini-barreeks (sparkline). items: [{label, value, tone, ref}].
+function sparkBars(items, maxVal) {
+  const max = maxVal || Math.max(1, ...items.map(i => i.value || 0));
+  return `<div class="ti-spark">${items.map(i => {
+    const h = i.value ? Math.max(6, Math.round(i.value / max * 100)) : 0;
+    return `<div class="ti-spark-col" title="${i.label}: ${i.value ? Math.round(i.value) : '—'}">
+      <div class="ti-spark-bar ${i.tone || ''}" style="height:${h}%"></div>
+      <span class="ti-spark-lbl">${i.label}</span>
+    </div>`;
+  }).join('')}</div>`;
+}
+
+function renderTrainingIntel() {
+  const wrap = document.getElementById('trainingIntel');
+  if (!wrap) return;
+
+  const today = todayNum();
+  const week = weekOf(today);
+  const vol = weeklyVolume(week);
+
+  // Krachtsessies t/m vandaag met gelogde knie-data: meest recente + historie.
+  const kneeHist = [];
+  for (let d = today; d >= 1 && kneeHist.length < 8; d--) {
+    const code = sessionFor(dateForDay(d));
+    if (!code.startsWith('K')) continue;
+    const k = kneeLoadForSession(resolveSlots(SESSIONS[code], d), d);
+    if (k.contributors.length) kneeHist.push({ day: d, ...k });
+  }
+  const knee = kneeHist[0] || null;
+
+  const prsWeek = weekPRSummary(week);
+  const prs = prTimeline(today, 8);
+
+  if (!vol.total && !knee && !prs.length) {
+    wrap.innerHTML = `
+      <div class="ti-head"><h3>Trainingsintelligentie</h3></div>
+      <div class="ti-empty">Log je sets op de Vandaag-tab — daarna verschijnen hier weekvolume, PR's en kniebelasting.</div>`;
+    return;
+  }
+
+  const maxGroup = vol.groups.length ? vol.groups[0][1] : 1;
+  const volBars = vol.groups.map(([g, v]) => `
+    <div class="ti-bar-row">
+      <span class="ti-bar-lbl">${g}</span>
+      <span class="ti-bar-track"><span class="ti-bar-fill" style="width:${Math.max(4, Math.round(v / maxGroup * 100))}%"></span></span>
+      <span class="ti-bar-val">${fmtVol(v)}</span>
+    </div>`).join('');
+
+  // Volume-trend over de weken t/m nu (#157).
+  const series = weeklyVolumeSeries(week);
+  const trendItems = series.map(s => ({ label: 'W' + s.week, value: s.total, tone: s.week === week ? 'cur' : '' }));
+  const volTrend = series.length > 1 ? `<div class="ti-trend"><div class="ti-trend-lbl">Volume per week</div>${sparkBars(trendItems)}</div>` : '';
+
+  const volCard = `
+    <div class="ti-card">
+      <div class="ti-card-top">
+        <div><div class="ti-k">Weekvolume</div><div class="ti-v">${fmtVol(vol.total)}<small> kg·reps</small></div></div>
+        ${deltaChip(vol.delta)}
+      </div>
+      <div class="ti-sub">${vol.sessionDays} ${vol.sessionDays === 1 ? 'sessie' : 'sessies'} gelogd in week ${week}</div>
+      ${volBars ? `<div class="ti-bars">${volBars}</div>` : ''}
+      ${volTrend}
+    </div>`;
+
+  // Kniebelasting: laatste sessie + historie-stippen (#11 / #170).
+  let kneeCard = '';
+  if (knee) {
+    const band = KNEE_BAND[knee.band];
+    const list = knee.contributors.slice(0, 3)
+      .map(c => `${c.name}${c.unsafe ? ' ⚠︎' : ''} <b>${fmtVol(c.volume)}</b>`).join(' · ');
+    const dots = kneeHist.slice().reverse()
+      .map(h => `<span class="ti-dot ${KNEE_BAND[h.band].tone}" title="Dag ${h.day}: ${KNEE_BAND[h.band].label} (index ${h.index})"></span>`).join('');
+    const highCount = kneeHist.filter(h => h.band === 'high').length;
+    kneeCard = `
+      <div class="ti-card">
+        <div class="ti-card-top">
+          <div><div class="ti-k">Kniebelasting · dag ${knee.day}</div><div class="ti-v">${band.label}<small> (index ${knee.index})</small></div></div>
+          <span class="ti-band ${band.tone}">${band.label}</span>
+        </div>
+        <div class="ti-sub">${band.text}</div>
+        <div class="ti-sub ti-muted">${list}</div>
+        ${kneeHist.length > 1 ? `<div class="ti-dots"><span class="ti-dots-lbl">Laatste ${kneeHist.length} sessies</span><span class="ti-dots-row">${dots}</span>${highCount ? `<span class="ti-dots-note">${highCount}× hoog</span>` : ''}</div>` : ''}
+      </div>`;
+  }
+
+  // PR-tijdlijn over het hele programma, met telling deze week (#158).
+  let prCard = '';
+  if (prs.length) {
+    const rows = prs.map(p => `
+      <div class="ti-pr-row">
+        <span class="ti-pr-name">${p.name}</span>
+        <span class="ti-pr-tags">${p.kinds.map(k => `<span class="ti-tag">${PR_LABELS[k]}</span>`).join('')}</span>
+        <span class="ti-pr-day">${shortDate(p.day)}</span>
+      </div>`).join('');
+    prCard = `
+      <div class="ti-card">
+        <div class="ti-k">PR-tijdlijn ${prsWeek.length ? `<span class="ti-count">${prsWeek.length} deze week</span>` : ''}</div>
+        <div class="ti-pr-list">${rows}</div>
+      </div>`;
+  }
+
+  wrap.innerHTML = `
+    <div class="ti-head"><h3>Trainingsintelligentie</h3><span>week ${week}</span></div>
+    ${volCard}${kneeCard}${prCard}`;
+}
+
+// ---- Voortgang & tempo (#169 goal-pace, #159 macro-trend) -------------------
+
+function renderProgressIntel() {
+  const wrap = document.getElementById('progressIntel');
+  if (!wrap) return;
+
+  const today = todayNum();
+  const week = weekOf(today);
+  const pace = goalPace(today);
+  const macro = macroWeeklySeries(week);
+  const loggedWeeks = macro.filter(m => m.days > 0);
+
+  if (!pace.expected && !loggedWeeks.length) { wrap.innerHTML = ''; return; }
+
+  // Goal-pace card.
+  const pacePct = pace.trainingPct === null ? null : Math.round(pace.trainingPct * 100);
+  const paceTone = pacePct === null ? 'neutral' : pacePct >= 85 ? 'good' : pacePct >= 60 ? 'warn' : 'bad';
+  let projLine = 'Log meer gewicht voor een dag-90 projectie.';
+  if (pace.projected !== null) {
+    const ch = pace.projectedChange;
+    const conf = pace.weighIns >= 7 ? '' : ' <span class="ti-muted">(weinig metingen — indicatief)</span>';
+    projLine = `Projectie dag 90: <b>${pace.projected.toFixed(1)} kg</b> (${ch >= 0 ? '+' : ''}${ch.toFixed(1)} kg vanaf start)${conf}`;
+  }
+  const paceCard = `
+    <div class="ti-card">
+      <div class="ti-card-top">
+        <div><div class="ti-k">Trainings-tempo · dag ${today}/90</div><div class="ti-v">${pacePct === null ? '—' : pacePct + '%'}</div></div>
+        <span class="ti-band ${paceTone === 'bad' ? 'bad' : paceTone === 'warn' ? 'warn' : 'good'}">${pace.done}/${pace.expected}</span>
+      </div>
+      <div class="ti-sub">${pace.done} van ${pace.expected} verwachte sessies voltooid.</div>
+      <div class="ti-sub">${projLine}</div>
+    </div>`;
+
+  // Macro-trend: gem. kcal per week met doellijn (#159).
+  let macroCard = '';
+  if (loggedWeeks.length) {
+    const goal = state.goals?.kcal || 0;
+    const maxKcal = Math.max(goal, ...loggedWeeks.map(m => m.avgKcal || 0));
+    const items = macro.map(m => ({
+      label: 'W' + m.week,
+      value: m.avgKcal,
+      tone: m.avgKcal === null ? '' : goal && m.avgKcal > goal * 1.06 ? 'over' : m.week === week ? 'cur' : ''
+    }));
+    const lastP = loggedWeeks[loggedWeeks.length - 1].avgP;
+    macroCard = `
+      <div class="ti-card">
+        <div class="ti-card-top">
+          <div><div class="ti-k">Gem. kcal per week</div><div class="ti-v">${Math.round(loggedWeeks[loggedWeeks.length - 1].avgKcal)}<small> kcal</small></div></div>
+          ${goal ? `<span class="ti-delta flat">doel ${goal}</span>` : ''}
+        </div>
+        ${sparkBars(items, maxKcal)}
+        <div class="ti-sub ti-muted">Laatste week: eiwit ~${lastP ? Math.round(lastP) : '—'} g/dag gem.</div>
+      </div>`;
+  }
+
+  wrap.innerHTML = `
+    <div class="ti-head"><h3>Voortgang &amp; tempo</h3><span>dag ${today}</span></div>
+    ${paceCard}${macroCard}`;
+}

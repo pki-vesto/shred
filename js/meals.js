@@ -1,0 +1,20 @@
+export const MEALS = {
+  O1: { name: 'Skyr + bessen + amandelen + ei', kcal: 580, p: 48, c: 35, f: 22 },
+  O2: { name: 'Roerei + brood + kwark', kcal: 580, p: 50, c: 35, f: 22 },
+  O3: { name: 'Volkoren toast + ei + skyr', kcal: 620, p: 48, c: 55, f: 20 },
+  O4: { name: 'Skyr + fruit + noten + brood', kcal: 550, p: 42, c: 50, f: 16 },
+  L1: { name: 'Kip + rijst + groente', kcal: 720, p: 55, c: 65, f: 18 },
+  L2: { name: 'Tonijn-pasta salade', kcal: 680, p: 55, c: 60, f: 16 },
+  L3: { name: 'Kipwrap + kwark', kcal: 700, p: 55, c: 70, f: 14 },
+  L4: { name: 'Gehakt + aardappel', kcal: 680, p: 50, c: 60, f: 18 },
+  L5: { name: 'Garnalen-rijst bowl', kcal: 700, p: 48, c: 65, f: 14 },
+  S1: { name: 'Kwark + bessen + noten', kcal: 290, p: 27, c: 18, f: 12 },
+  S2: { name: 'Whey shake + appel + noten', kcal: 330, p: 28, c: 20, f: 15 },
+  S3: { name: 'Hüttenkäse + rijstwafels', kcal: 330, p: 24, c: 35, f: 7 },
+  S4: { name: 'Skyr + banaan + pindakaas', kcal: 310, p: 22, c: 35, f: 10 },
+  D1: { name: 'Zalm + zoete aardappel', kcal: 720, p: 42, c: 60, f: 28 },
+  D2: { name: 'Kipstoof + rijst', kcal: 700, p: 55, c: 70, f: 14 },
+  D3: { name: 'Witvis + aardappel + ei', kcal: 680, p: 50, c: 65, f: 14 },
+  D4: { name: 'Biefstuk + aardappel', kcal: 680, p: 50, c: 60, f: 22 },
+  D5: { name: 'Gehakt-pasta bolognese', kcal: 750, p: 52, c: 70, f: 20 }
+};

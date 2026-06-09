@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b0c0e">
+<script>
+  // Thema toepassen vóór eerste paint (geen flits). Per-device voorkeur in
+  // localStorage; 'system' volgt het toestel. Rest van de logica: js/theme.js.
+  (function () {
+    try {
+      var t = localStorage.getItem('shred_theme') || 'light';
+      var eff = t === 'system'
+        ? (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark')
+        : (t === 'light' ? 'light' : 'dark');
+      document.documentElement.setAttribute('data-theme', eff);
+      var m = document.querySelector('meta[name=theme-color]');
+      if (m) m.setAttribute('content', eff === 'light' ? '#f1f2f4' : '#0b0c0e');
+    } catch (e) {}
+  })();
+</script>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Shred</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='15' fill='%230f1113'/%3E%3Cg fill='%23303338'%3E%3Ccircle cx='18' cy='18' r='3'/%3E%3Ccircle cx='32' cy='18' r='3'/%3E%3Ccircle cx='46' cy='18' r='3'/%3E%3Ccircle cx='18' cy='32' r='3'/%3E%3Ccircle cx='46' cy='46' r='3'/%3E%3C/g%3E%3Cg fill='%23f2a73c'%3E%3Ccircle cx='46' cy='32' r='3'/%3E%3Ccircle cx='32' cy='32' r='3'/%3E%3Ccircle cx='32' cy='46' r='3'/%3E%3Ccircle cx='18' cy='46' r='3'/%3E%3C/g%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<div class="app">
+
+  <div class="topbar">
+    <div class="brand">
+      <svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="15" fill="#15181b"/><g fill="#303338"><circle cx="18" cy="18" r="3"/><circle cx="32" cy="18" r="3"/><circle cx="46" cy="18" r="3"/><circle cx="18" cy="32" r="3"/><circle cx="46" cy="46" r="3"/></g><g fill="#f2a73c"><circle cx="46" cy="32" r="3"/><circle cx="32" cy="32" r="3"/><circle cx="32" cy="46" r="3"/><circle cx="18" cy="46" r="3"/></g></svg>
+      <h1>Shred</h1>
+      <button id="syncDot" class="sync-dot idle" title="Sync-status" aria-label="Sync-status"></button>
+    </div>
+    <div class="progress-line">
+      <span class="day-count">Dag <b id="pDay" class="num">1</b> / 90</span>
+      <span id="pPct" class="num">0%</span>
+    </div>
+    <div class="bar"><div class="bar-fill" id="pBar" style="width:0%"></div></div>
+  </div>
+
+  <!-- TODAY -->
+  <div id="tab-today">
+    <div class="day-nav">
+      <button class="arrow" id="prevDay" aria-label="Vorige dag">‹</button>
+      <div class="day-center">
+        <div class="day-label">
+          <span class="num" id="dayNum">1</span>
+          <span class="of">dag van 90</span>
+          <span class="date" id="dayDate"></span>
+        </div>
+        <button id="todayBtn" class="today-btn">Naar vandaag</button>
+      </div>
+      <button class="arrow" id="nextDay" aria-label="Volgende dag">›</button>
+    </div>
+    <div id="deloadSuggest"></div>
+    <div id="sessionContainer"></div>
+    <div class="notes-box">
+      <label>Notities</label>
+      <textarea id="notes" placeholder="Hoe ging het? Gewichten, gevoel, energie…"></textarea>
+    </div>
+  </div>
+
+  <!-- BODY -->
+  <div id="tab-body" class="hidden">
+    <div class="body-section">
+      <div class="weight-hero">
+        <div class="label">Gewicht vandaag</div>
+        <div class="weight-display">
+          <span class="val empty" id="wHero">—</span>
+          <span class="unit">kg</span>
+          <span class="delta-chip flat" id="wDeltaChip">—</span>
+        </div>
+        <div class="weight-entry">
+          <input type="number" step="0.1" inputmode="decimal" id="weightInput" placeholder="80.0">
+          <button id="weightSave">Opslaan</button>
+        </div>
+      </div>
+      <div class="weight-insights" id="weightInsights"></div>
+      <div class="chart-box" id="weightChart">
+        <div class="chart-legend">
+          <span><i class="dash"></i>Trendgewicht (EWMA)</span>
+          <span><i class="dot"></i>dagelijks</span>
+        </div>
+        <div class="chart-svg-wrap" id="chartWrap">
+          <svg class="line" viewBox="0 0 340 168"></svg>
+          <div class="chart-tooltip" id="chartTip"></div>
+        </div>
+        <div class="delta-bars" id="deltaBars"></div>
+      </div>
+    </div>
+
+    <div class="body-section">
+      <h2 class="section-title">Metingen</h2>
+      <div id="measureSection"></div>
+    </div>
+
+    <div class="body-section">
+      <h2 class="section-title">Voortgangsfoto's</h2>
+      <label class="photo-upload">
+        <input type="file" accept="image/*" id="photoInput">
+        <span class="pic"><svg viewBox="0 0 24 24"><path d="M3 8a2 2 0 0 1 2-2h2l1.5-2h7L19 6h0a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="12.5" r="3.2"/></svg></span>
+        <span class="txt">Foto toevoegen<small>Week <span id="photoWeekNum">1</span> · leg je voortgang vast</small></span>
+      </label>
+      <div class="photo-grid" id="photoGrid"></div>
+    </div>
+  </div>
+
+  <!-- FOOD -->
+  <div id="tab-food" class="hidden">
+    <div class="day-nav">
+      <button class="arrow" id="foodPrev" aria-label="Vorige dag">‹</button>
+      <div class="day-center">
+        <div class="day-label"><span class="num" id="foodDayNum">1</span><span class="of">dag van 90</span><span class="date" id="foodDayDate"></span></div>
+      </div>
+      <button class="arrow" id="foodNext" aria-label="Volgende dag">›</button>
+    </div>
+    <div class="macro-summary" id="macroSummary"></div>
+    <div class="food-section" id="foodSection"></div>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div id="tab-overview" class="hidden">
+    <div class="overview">
+      <div class="dashboard-kpis" id="dashboardKpis"></div>
+      <div class="weekly-review" id="weeklyReview"></div>
+      <div class="training-intel" id="trainingIntel"></div>
+      <div class="training-intel" id="progressIntel"></div>
+      <div class="streak-hero">
+        <div class="streak-flame">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M12 3c.5 3-1.5 4.5-3 6.5C7.2 12 7 14.2 8 16a5 5 0 0 0 8.5 1.5c1.8-2 1.8-5-.5-8 .3 1.5-.3 2.5-1 3 .4-2.5-1-5-3-9.5Z" fill="#f2a73c"/></svg>
+        </div>
+        <div class="streak-meta">
+          <div class="big"><span class="num" id="sStreak">0</span><span>dagen op rij</span></div>
+          <div class="lbl">Je streak — elke voltooide dag telt</div>
+        </div>
+      </div>
+      <div class="stats">
+        <div class="stat kracht"><div class="v num" id="sKracht">0</div><div class="l"><span class="tag"></span>Krachtsessies</div></div>
+        <div class="stat cardio"><div class="v num" id="sCardio">0</div><div class="l"><span class="tag"></span>Cardiosessies</div></div>
+      </div>
+      <div class="dna-head">
+        <h3>13 weken</h3>
+        <div class="dna-legend">
+          <span><span class="lg-shape str"><i></i></span>Kracht</span>
+          <span><span class="lg-shape car"><i></i></span>Cardio</span>
+          <span><span class="lg-shape rst"><i></i></span>Rust</span>
+        </div>
+      </div>
+      <div class="dna" id="overviewContent"></div>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div id="tab-settings" class="hidden">
+    <div class="body-section">
+      <h2 class="section-title">Weergave</h2>
+      <div class="seg" id="themeSeg" role="group" aria-label="Weergave">
+        <button class="seg-btn" data-theme-opt="system"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>Systeem</button>
+        <button class="seg-btn" data-theme-opt="light"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>Licht</button>
+        <button class="seg-btn" data-theme-opt="dark"><svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>Donker</button>
+      </div>
+    </div>
+
+    <div class="body-section">
+      <h2 class="section-title">Programma</h2>
+      <div class="set-group">
+        <div class="set-card">
+          <div class="field-stack">
+            <label>Startdatum — dag 1</label>
+            <input type="date" id="startDateInput">
+          </div>
+          <div class="set-hint">Vandaag = dag <b id="todayDayNum">1</b> van 90.</div>
+        </div>
+      </div>
+      <button id="saveStart" class="btn-primary">Startdatum opslaan</button>
+    </div>
+
+    <div class="body-section">
+      <h2 class="section-title">Macro-doelen</h2>
+      <div class="set-card" style="margin-bottom:14px;">
+        <div class="field-stack">
+          <div class="field-row">
+            <div><label>Calorieën</label><input type="number" inputmode="numeric" id="goalKcal" value="2250"></div>
+            <div><label>Eiwit (g)</label><input type="number" inputmode="numeric" id="goalP" value="180"></div>
+          </div>
+        </div>
+        <div class="field-stack" style="padding-top:0;">
+          <div class="field-row">
+            <div><label>Koolhydraten (g)</label><input type="number" inputmode="numeric" id="goalC" value="220"></div>
+            <div><label>Vet (g)</label><input type="number" inputmode="numeric" id="goalF" value="65"></div>
+          </div>
+        </div>
+      </div>
+      <button id="saveGoals" class="btn-primary">Doelen opslaan</button>
+    </div>
+
+    <div class="body-section">
+      <h2 class="section-title">Voeding</h2>
+      <button id="manageLibBtn" class="btn-ghost" style="margin-bottom:10px;"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>Productbibliotheek beheren</button>
+      <button id="manageTplBtn" class="btn-ghost" style="margin-bottom:10px;"><svg viewBox="0 0 24 24"><path d="M4 5h16v14H4zM4 9h16"/></svg>Templates beheren</button>
+      <button id="resetLibBtn" class="btn-ghost"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 0 1 14-5l2 2M20 12a8 8 0 0 1-14 5l-2-2"/><path d="M20 4v5h-5M4 20v-5h5"/></svg>Reset bibliotheek naar seed</button>
+    </div>
+
+    <div class="body-section">
+      <h2 class="section-title">Spraak</h2>
+      <div class="set-card">
+        <label class="voice-toggle">
+          <span>Spraak inschakelen</span>
+          <input type="checkbox" id="voiceEnabled">
+        </label>
+        <div class="set-hint" id="voiceInfo"></div>
+      </div>
+      <button id="micTestBtn" class="btn-ghost" style="margin-top:10px;"><svg viewBox="0 0 24 24"><path d="M12 3a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3z"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>Mic test</button>
+    </div>
+
+    <div class="body-section" id="syncSection"></div>
+
+    <div class="body-section">
+      <h2 class="section-title">App-icoon</h2>
+      <div class="set-card">
+        <div class="icon-preview">
+          <div class="tile" id="iconTile"></div>
+          <div class="meta">
+            <div class="nm">Shred</div>
+            <div class="ds">Het 90-cellen programmaraster — vult zich met amber naarmate je dagen voltooit.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="body-section">
+      <h2 class="section-title">Data</h2>
+      <button id="exportBtn" class="btn-ghost" style="margin-bottom:10px;"><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg>Exporteer JSON</button>
+      <button class="danger-btn" id="resetBtn">Alle voortgang wissen</button>
+    </div>
+  </div>
+
+  <!-- Photo viewer -->
+  <div class="photo-viewer" id="photoViewer">
+    <button class="photo-viewer-close" id="photoClose">✕</button>
+    <img id="photoViewerImg" alt="">
+  </div>
+
+</div>
+
+<nav class="bottombar">
+  <div class="bottombar-inner">
+    <button class="bnav active" data-tab="today" aria-label="Vandaag"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="5.5" y="8.5" width="2.5" height="7" rx="1"/><rect x="16" y="8.5" width="2.5" height="7" rx="1"/><rect x="2.5" y="10" width="2.2" height="4" rx="1"/><rect x="19.3" y="10" width="2.2" height="4" rx="1"/><path d="M8 12h8"/></svg></span>Vandaag</button>
+    <button class="bnav" data-tab="food" aria-label="Voeding"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3v7a2.5 2.5 0 0 0 5 0V3"/><path d="M8.5 3v18"/><path d="M17 3c-1.6 0-2.8 2-2.8 4.5S15.4 12 17 12v9"/></svg></span>Voeding</button>
+    <button class="bnav" data-tab="body" aria-label="Lichaam"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19l4.5-5 3.5 3 4-6 4 5"/><circle cx="4" cy="19" r="0.5"/></svg></span>Lichaam</button>
+    <button class="bnav" data-tab="overview" aria-label="Overzicht"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="6.5" height="6.5" rx="1.4"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.4"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.4"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.4"/></svg></span>Overzicht</button>
+    <button class="bnav" data-tab="settings" aria-label="Settings"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></span>Settings</button>
+  </div>
+</nav>
+
+<div class="toast-host" id="toastHost"></div>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

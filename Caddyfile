@@ -1,0 +1,38 @@
+{
+	admin off
+	persist_config off
+	# TLS is handled upstream by Tailscale Serve (valid Let's Encrypt cert on
+	# the tailnet name shred.<tailnet>.ts.net). Caddy itself terminates nothing:
+	# no internal CA, no :443, no automatic http->https redirects.
+	auto_https off
+}
+
+# Unrelated service on this same Caddy — stays on plain http, untouched.
+http://forge.frodo.local {
+	reverse_proxy 172.17.0.1:8001
+	encode gzip
+	log {
+		output stderr
+		format console
+	}
+}
+
+# Everything else on :80 = the Shred app. This catch-all matches BOTH:
+#   - LAN access via http://shred.frodo.local  (desktop tests, no mic)
+#   - Tailscale Serve proxying https://shred.<tailnet>.ts.net -> 127.0.0.1:80
+# Tailscale terminates HTTPS and forwards plain http here; whatever Host header
+# it sends (the tailnet name or 127.0.0.1) lands on this default site, never on
+# the forge block above, so forge is not exposed to the tailnet.
+:80 {
+	handle /api/* {
+		reverse_proxy shred-api:8089
+	}
+	handle {
+		reverse_proxy shred:80
+	}
+	encode gzip
+	log {
+		output stderr
+		format console
+	}
+}

@@ -1,0 +1,75 @@
+services:
+  shred:
+    image: nginx:alpine
+    container_name: shred
+    restart: unless-stopped
+    volumes:
+      - ./:/usr/share/nginx/html:ro
+    networks: [shrednet]
+    # Keep 8088 exposed as a fallback path in case mDNS/Caddy misbehaves.
+    ports:
+      - "8088:80"
+
+  shred-api:
+    build: ./api
+    container_name: shred-api
+    restart: unless-stopped
+    env_file: .env            # BEARER_TOKEN, ANTHROPIC_API_KEY, LLM_MODEL, ENABLE_VOICE, WHISPER_LANGUAGE
+    environment:
+      - PORT=8089
+      - DATA_DIR=/data
+      - WHISPER_URL=http://whisper:9000   # self-hosted STT on the internal net
+      - CORE_DB=/core/core.db             # Health Core (Fase A dual-write target)
+    depends_on: [whisper]
+    volumes:
+      - ./data:/data
+      - /home/peter/health-core/data:/core   # Health Core lives outside shred; mounted RW for dual-write
+    networks: [shrednet]
+    # No host port mapping — only reachable via Caddy / docker network.
+
+  # Self-hosted speech-to-text (faster-whisper) for voice meal-logging. Runs on
+  # the internal network only — audio never leaves frodo. CPU inference; `small`
+  # is a good Dutch/quality/speed balance for short clips. Model weights are
+  # downloaded once into the whisper_cache volume on first request.
+  whisper:
+    image: onerahmet/openai-whisper-asr-webservice:latest
+    container_name: shred-whisper
+    restart: unless-stopped
+    environment:
+      - ASR_ENGINE=faster_whisper
+      - ASR_MODEL=small
+      - ASR_MODEL_PATH=/cache
+    volumes:
+      - whisper_cache:/cache
+    networks: [shrednet]
+    # No host port mapping — only reachable via the shred-api container.
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: shred-caddy
+    restart: unless-stopped
+    # Plain-http routing only (port 80). TLS is terminated upstream by Tailscale
+    # Serve, so Caddy no longer binds 443. Port 80 still serves forge.frodo.local
+    # on the LAN and is the backend Tailscale Serve proxies the app to.
+    ports:
+      - "80:80"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks: [shrednet]
+    depends_on: [shred, shred-api]
+
+  # NOTE: the mDNS alias for `shred.frodo.local` is published by a host-side
+  # systemd unit, not a container. The DBus policy on this host refuses
+  # container connections even via mounted sockets. See systemd/README in this
+  # repo and the project README for install steps (one-time sudo).
+
+networks:
+  shrednet:
+    driver: bridge
+
+volumes:
+  caddy_data:
+  caddy_config:
+  whisper_cache:
