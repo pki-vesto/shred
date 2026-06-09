@@ -77,6 +77,12 @@ db.exec(`
     updated_at   INTEGER NOT NULL
   );
 
+  CREATE TABLE IF NOT EXISTS cardio (
+    day          INTEGER PRIMARY KEY,
+    value        TEXT NOT NULL,
+    updated_at   INTEGER NOT NULL
+  );
+
   CREATE TABLE IF NOT EXISTS photos (
     id         INTEGER PRIMARY KEY,
     week       INTEGER NOT NULL,
@@ -98,6 +104,7 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_templates_updated ON meal_templates(updated_at);
   CREATE INDEX IF NOT EXISTS idx_slot_choices_updated ON slot_choices(updated_at);
   CREATE INDEX IF NOT EXISTS idx_measurements_updated ON measurements(updated_at);
+  CREATE INDEX IF NOT EXISTS idx_cardio_updated    ON cardio(updated_at);
   CREATE INDEX IF NOT EXISTS idx_photos_updated    ON photos(updated_at);
 `);
 

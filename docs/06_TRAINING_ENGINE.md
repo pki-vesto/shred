@@ -32,9 +32,11 @@ Een programmadag is de centrale sleutel voor training. Alle logs gebruiken progr
 Dagtypes:
 
 - Kracht: slots, sets, completion, notities.
-- Cardio intervals: duur/intensiteit toekomstig uitbreidbaar.
-- Zone 2 cardio: duur, hartslagzone toekomstig uitbreidbaar.
+- Cardio intervals (CI): duur, RPE, gem. HR, intervallen voltooid + notitie — sync-type `cardio`.
+- Zone 2 cardio (CZ): duur, RPE, gem. HR + notitie; toont een zone-2 doelbereik (60–70% van de optionele max-HR in `goals.maxHr`) en flagt of de gelogde HR in zone valt.
 - Rustdag: herstelgedrag en optionele wandeling.
+
+Cardio-detail leeft in `state.cardio[day] = { durationMin, rpe, avgHr, intervalsDone, note }` (eigen sync-type, LWW). De bestaande completion-boolean (`completed[day].cardio`) blijft de bron voor streak/voltooiing; een gelogde duur markeert de dag automatisch voltooid. Health Core dual-write spiegelt de duur naar `fitness.cardio_minutes` (min).
 
 ## Slots
 

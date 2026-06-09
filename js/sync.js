@@ -118,7 +118,7 @@ async function api(method, url, body) {
 function buildOutboundRecords() {
   state.ts = state.ts || {};
   const out = [];
-  for (const type of ['meta', 'day_log', 'sets', 'exercise_notes', 'weights', 'foods', 'product', 'template', 'slot_choices', 'measurements']) {
+  for (const type of ['meta', 'day_log', 'sets', 'exercise_notes', 'weights', 'foods', 'product', 'template', 'slot_choices', 'measurements', 'cardio']) {
     const tsMap = state.ts[type] || {};
     for (const key in tsMap) {
       const updatedAt = tsMap[key];
@@ -158,6 +158,7 @@ function readValue(type, key) {
     case 'template': return state.mealTemplates[key];
     case 'slot_choices': return state.slotChoices[parseInt(key)] || {};
     case 'measurements': return state.measurements[parseInt(key)] || {};
+    case 'cardio': return state.cardio[parseInt(key)] || {};
   }
 }
 
@@ -236,6 +237,12 @@ function writeValue(type, key, value) {
       const day = parseInt(key);
       if (value && Object.keys(value).length) state.measurements[day] = value;
       else delete state.measurements[day];
+      break;
+    }
+    case 'cardio': {
+      const day = parseInt(key);
+      if (value && Object.keys(value).length) state.cardio[day] = value;
+      else delete state.cardio[day];
       break;
     }
   }

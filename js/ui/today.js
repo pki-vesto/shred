@@ -83,7 +83,8 @@ export function renderToday() {
       <ul class="ex-list single-check"><li class="ex-item ${done ? 'done' : ''}" data-cardio="1">
         <div class="ex-head"><div class="ex-check"><span class="check-ring"></span>${CHECK_SVG}</div>
         <div class="ex-info"><div class="ex-name">Sessie voltooid</div></div></div>
-      </li></ul>`;
+      </li></ul>
+      <div class="cardio-log" id="cardioLog"></div>`;
   } else {
     const done = state.completed[n]?.rest === true;
     html += `<div class="rest-content"><div class="moon">🌙</div>${sess.body}</div>
@@ -98,6 +99,7 @@ export function renderToday() {
   bindTodayEvents(n, sess, items);
   renderSetRows(n, sess, items);
   renderTrainingSummary(n, items);
+  if (sess.type === 'cardio') renderCardioLog(n, code);
 
   const notes = document.getElementById('notes');
   notes.value = state.notes[n] || '';
@@ -363,6 +365,70 @@ function renderExerciseSummary(i, exId, day) {
     return;
   }
   target.innerHTML = `<span>${Math.round(sum.volume)} kg volume</span><span>${sum.sets} sets</span>${sum.topLabel ? `<span>top ${sum.topLabel}</span>` : ''}`;
+}
+
+// Cardio-logformulier (#16/#17/#18): duur + RPE + gem. HR + (intervals bij CI),
+// met zone-2 hartslagcontext bij CZ. Een gelogde duur markeert de dag voltooid.
+function renderCardioLog(n, code) {
+  const el = document.getElementById('cardioLog');
+  if (!el) return;
+  const c = state.cardio[n] || {};
+  const isInterval = code === 'CI';
+  const maxHr = Number(state.goals?.maxHr) || 0;
+
+  let zoneHtml = '';
+  if (code === 'CZ' && maxHr) {
+    const lo = Math.round(maxHr * 0.6), hi = Math.round(maxHr * 0.7);
+    const hr = Number(c.avgHr);
+    let flag = '';
+    if (Number.isFinite(hr) && hr > 0) {
+      const tone = hr >= lo && hr <= hi ? 'good' : hr < lo ? 'warn' : 'bad';
+      const lbl = hr >= lo && hr <= hi ? 'in zone 2' : hr < lo ? 'onder zone 2' : 'boven zone 2';
+      flag = `<span class="cardio-zone-flag ${tone}">${lbl}</span>`;
+    }
+    zoneHtml = `<div class="cardio-zone">Zone 2-doel: <b>${lo}–${hi} bpm</b> (60–70% van ${maxHr}) ${flag}</div>`;
+  } else if (code === 'CZ') {
+    zoneHtml = `<div class="cardio-zone muted">Stel je max-hartslag in bij Settings voor een zone-2 doelbereik. Vuistregel: zone 2 = je kunt nog volzinnen praten.</div>`;
+  }
+
+  el.innerHTML = `
+    <div class="cardio-log-head">Sessie loggen</div>
+    <div class="cardio-fields">
+      <div class="cardio-field"><label>Duur</label><div class="cf-in"><input type="number" inputmode="numeric" id="cdDur" value="${c.durationMin ?? ''}" placeholder="min"><span>min</span></div></div>
+      <div class="cardio-field"><label>RPE</label><select id="cdRpe"><option value="">–</option>${[1,2,3,4,5,6,7,8,9,10].map(v => `<option value="${v}" ${String(c.rpe) === String(v) ? 'selected' : ''}>${v}</option>`).join('')}</select></div>
+      <div class="cardio-field"><label>Gem. HR</label><div class="cf-in"><input type="number" inputmode="numeric" id="cdHr" value="${c.avgHr ?? ''}" placeholder="bpm"><span>bpm</span></div></div>
+      ${isInterval ? `<div class="cardio-field"><label>Intervallen</label><div class="cf-in"><input type="number" inputmode="numeric" id="cdInt" value="${c.intervalsDone ?? ''}" placeholder="aantal"><span>×</span></div></div>` : ''}
+    </div>
+    ${zoneHtml}
+    <textarea class="cardio-note" id="cdNote" rows="1" placeholder="Notitie (type cardio, gevoel…)">${escapeHtml(c.note || '')}</textarea>
+    <button class="btn-primary" id="cdSave">${c.durationMin ? 'Bijwerken' : 'Sessie loggen'}</button>`;
+
+  document.getElementById('cdSave').onclick = () => {
+    const rec = {};
+    const dur = parseInt(document.getElementById('cdDur').value);
+    const rpe = parseInt(document.getElementById('cdRpe').value);
+    const hr = parseInt(document.getElementById('cdHr').value);
+    const note = document.getElementById('cdNote').value.trim();
+    if (Number.isFinite(dur) && dur > 0) rec.durationMin = dur;
+    if (Number.isFinite(rpe) && rpe > 0) rec.rpe = rpe;
+    if (Number.isFinite(hr) && hr > 0) rec.avgHr = hr;
+    if (isInterval) { const iv = parseInt(document.getElementById('cdInt').value); if (Number.isFinite(iv) && iv > 0) rec.intervalsDone = iv; }
+    if (note) rec.note = note;
+
+    if (Object.keys(rec).length) state.cardio[n] = rec; else delete state.cardio[n];
+    mutate('cardio', String(n));
+
+    // Een gelogde duur betekent: sessie gedaan → markeer completion (idempotent).
+    if (rec.durationMin && !state.completed[n]?.cardio) {
+      state.completed[n] = state.completed[n] || {};
+      state.completed[n].cardio = true;
+      mutate('day_log', String(n));
+    }
+    tick(10);
+    renderToday();
+    renderTopbar();
+    toast('Cardio gelogd', 'success');
+  };
 }
 
 function renderTrainingSummary(day, items) {

@@ -2,7 +2,7 @@
 
 Levende status van Shred Tracker. Bijgewerkt bij elke milestone. Details staan in de genummerde docs; dit is het snelle overzicht.
 
-**Laatst bijgewerkt:** 2026-06-09 · **Release:** v1.5.0 · **SW cache:** `shred-v19` · **Backlog:** 53/200 klaar (zie [PRODUCT_BACKLOG.md](PRODUCT_BACKLOG.md)).
+**Laatst bijgewerkt:** 2026-06-09 · **Release:** v1.6.0 · **SW cache:** `shred-v20` · **Backlog:** 56/200 klaar (zie [PRODUCT_BACKLOG.md](PRODUCT_BACKLOG.md)).
 
 ## Live deployment
 - Frontend (`shred`, nginx) is **bind-mounted** (`./:/usr/share/nginx/html:ro`) → wijzigingen direct live; clients herladen bij SW-versiebump.
@@ -16,10 +16,12 @@ Levende status van Shred Tracker. Bijgewerkt bij elke milestone. Details staan i
 - Weekrapport met confidence per item + één aanbeveling; KPI's met confidence-badges.
 - Voeding: productbibliotheek, gerankte zoek, templates, AI macro-lookup, voice-logging met confidence-pills.
 - Lichaam: gewicht + EWMA-trendgewicht (grafiek), plateau v2, consistentie, forecast, foto's, **lichaamsmetingen** (taille/heup/borst/arm/dij).
-- Sync: LWW per recordtype (`meta, day_log, sets, exercise_notes, weights, foods, product, template, slot_choices, measurements`) + photos.
-- Health Core Fase A dual-write (bodyweight, nutrition aggregates, session volume, body.* metingen); status via `GET /api/health/core`.
+- Training: cardio-logging (duur/RPE/HR/intervallen) met zone-2 hartslagcontext (optionele max-HR in doelen).
+- Sync: LWW per recordtype (`meta, day_log, sets, exercise_notes, weights, foods, product, template, slot_choices, measurements, cardio`) + photos.
+- Health Core Fase A dual-write (bodyweight, nutrition aggregates, session volume, body.* metingen, cardio-minuten); status via `GET /api/health/core`.
 
 ## In uitvoering / net af
+- v1.6.0: M3-b cardio-logging (nieuw `cardio` sync-type + zone-2 context + Core dual-write `fitness.cardio_minutes` + tests).
 - v1.5.0: M3-a lichaamsmetingen (nieuw `measurements` sync-type, end-to-end + Core dual-write + tests).
 
 ## Verificatie-status
@@ -27,4 +29,4 @@ Levende status van Shred Tracker. Bijgewerkt bij elke milestone. Details staan i
 - **Openstaand**: handmatige browser/PWA-verificatie op iPhone/Mac van de recente UI (analytics-secties, confidence-badges, voice-UX, metingen, sync tussen devices). Logica + serve + api zijn wel geverifieerd.
 
 ## Bekende gaten / volgende prioriteiten
-Zie [ROADMAP.md](ROADMAP.md). Kort: M3-b cardio-logging (#16), M4 Health Core read-integratie (#128-135) als poort naar Recovery (#51-75) en AI-reviews (#103-107).
+Zie [ROADMAP.md](ROADMAP.md). Kort: M4 Health Core read-integratie (#128-135) als poort naar Recovery (#51-75) en AI-reviews (#103-107); M3-c voeding-velden (fiber/hydration) als kleinere additieve tussenstap.

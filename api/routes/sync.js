@@ -118,6 +118,15 @@ const TYPES = {
              ON CONFLICT(day) DO UPDATE SET value=excluded.value, updated_at=excluded.updated_at`,
     rowToRecord: (r) => ({ type: 'measurements', key: String(r.day), value: JSON.parse(r.value), updatedAt: r.updated_at }),
     apply: (key, value, ts) => upsertMeasurements.run(parseInt(key), JSON.stringify(value || {}), ts)
+  },
+  cardio: {
+    table: 'cardio',
+    selectAll: 'SELECT day, value, updated_at FROM cardio WHERE updated_at > ?',
+    selectOne: 'SELECT updated_at FROM cardio WHERE day = ?',
+    upsert: `INSERT INTO cardio (day, value, updated_at) VALUES (?, ?, ?)
+             ON CONFLICT(day) DO UPDATE SET value=excluded.value, updated_at=excluded.updated_at`,
+    rowToRecord: (r) => ({ type: 'cardio', key: String(r.day), value: JSON.parse(r.value), updatedAt: r.updated_at }),
+    apply: (key, value, ts) => upsertCardio.run(parseInt(key), JSON.stringify(value || {}), ts)
   }
 };
 
@@ -131,6 +140,7 @@ const upsertProducts  = db.prepare(TYPES.product.upsert);
 const upsertTemplates = db.prepare(TYPES.template.upsert);
 const upsertSlotChoices = db.prepare(TYPES.slot_choices.upsert);
 const upsertMeasurements = db.prepare(TYPES.measurements.upsert);
+const upsertCardio       = db.prepare(TYPES.cardio.upsert);
 const selectMetaTs      = db.prepare(TYPES.meta.selectOne);
 const selectDayLogTs    = db.prepare(TYPES.day_log.selectOne);
 const selectSetsTs      = db.prepare(TYPES.sets.selectOne);
@@ -141,6 +151,7 @@ const selectProductTs   = db.prepare(TYPES.product.selectOne);
 const selectTemplateTs  = db.prepare(TYPES.template.selectOne);
 const selectSlotChoicesTs = db.prepare(TYPES.slot_choices.selectOne);
 const selectMeasurementsTs = db.prepare(TYPES.measurements.selectOne);
+const selectCardioTs       = db.prepare(TYPES.cardio.selectOne);
 const selectAll = {
   meta: db.prepare(TYPES.meta.selectAll),
   day_log: db.prepare(TYPES.day_log.selectAll),
@@ -152,6 +163,7 @@ const selectAll = {
   template: db.prepare(TYPES.template.selectAll),
   slot_choices: db.prepare(TYPES.slot_choices.selectAll),
   measurements: db.prepare(TYPES.measurements.selectAll),
+  cardio: db.prepare(TYPES.cardio.selectAll),
 };
 const selectPhotos = db.prepare(
   'SELECT id, week, filename, mime, size, deleted, created_at, updated_at FROM photos WHERE updated_at > ?'
@@ -175,6 +187,7 @@ function existingTs(type, key) {
     case 'template': return selectTemplateTs.get(key)?.updated_at ?? -1;
     case 'slot_choices': return selectSlotChoicesTs.get(parseInt(key))?.updated_at ?? -1;
     case 'measurements': return selectMeasurementsTs.get(parseInt(key))?.updated_at ?? -1;
+    case 'cardio':       return selectCardioTs.get(parseInt(key))?.updated_at ?? -1;
     default: return -1;
   }
 }

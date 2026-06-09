@@ -43,7 +43,8 @@ dualWrite([
   { type: 'weights', key: '5', value: 84.2, updatedAt: now },
   { type: 'foods', key: '5', updatedAt: now },
   { type: 'sets', key: 'bench:5', updatedAt: now },
-  { type: 'measurements', key: '5', value: { waist: 88, hip: 96, arm: 35 }, updatedAt: now }
+  { type: 'measurements', key: '5', value: { waist: 88, hip: 96, arm: 35 }, updatedAt: now },
+  { type: 'cardio', key: '6', value: { durationMin: 32, rpe: 4, avgHr: 138 }, updatedAt: now }
 ]);
 
 // ── Assert: observations in core.db ─────────────────────────────────────────
@@ -69,6 +70,13 @@ assert.equal(get('body.waist').timestamp, '2026-01-05');
 assert.equal(get('body.hip').value, 96, 'heup');
 assert.equal(get('body.arm').value, 35, 'arm');
 assert.equal(get('body.chest'), undefined, 'borst niet ingevuld → geen observatie');
+
+// Cardio (#16): duur → fitness.cardio_minutes (min) op dag 6 = 2026-01-06.
+const cardio = get('fitness.cardio_minutes');
+assert.ok(cardio, 'cardio_minutes observatie ontbreekt');
+assert.equal(cardio.value, 32, 'cardio minuten');
+assert.equal(cardio.unit, 'min');
+assert.equal(cardio.timestamp, '2026-01-06', 'dag 6 → 2026-01-06');
 
 // ── Assert: idempotent (LWW). Zelfde records nog eens → geen duplicaten ──────
 dualWrite([{ type: 'weights', key: '5', value: 84.2, updatedAt: now }]);

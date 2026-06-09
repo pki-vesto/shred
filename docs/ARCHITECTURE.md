@@ -13,7 +13,7 @@ shred-api ──best-effort──▶ Health Core core.db (dual-write Fase A)
 ```
 
 - **Frontend:** vanilla ES modules, `state` als single source of truth, mutaties via `mutate(type,key)`; `state.ts[type][key]` voedt outbound sync.
-- **Sync:** Last-Write-Wins per recordtype; server wint ties. Types: `meta, day_log, sets, exercise_notes, weights, foods, product, template, slot_choices, measurements` + `photo` (metadata; blob apart).
+- **Sync:** Last-Write-Wins per recordtype; server wint ties. Types: `meta, day_log, sets, exercise_notes, weights, foods, product, template, slot_choices, measurements, cardio` + `photo` (metadata; blob apart).
 - **Backend:** Express-routers (`health, sync, photos, voice, products`), `better-sqlite3` WAL, recordtype-georiënteerde tabellen.
 - **Auth-grens:** geen app-auth; Tailscale (WireGuard + ACL). Docker-poortgrens geborgd door `api/check-auth-boundary.sh`.
 - **Health Core:** additieve, best-effort observations dual-write; status/formuleversies via `GET /api/health/core`.

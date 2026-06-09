@@ -50,11 +50,14 @@ export function renderSettings() {
   ['kcal', 'p', 'c', 'f'].forEach(k => {
     document.getElementById('goal' + k[0].toUpperCase() + k.slice(1)).value = state.goals[k];
   });
+  document.getElementById('goalMaxHr').value = state.goals.maxHr || '';
   document.getElementById('saveGoals').onclick = () => {
     state.goals.kcal = +document.getElementById('goalKcal').value || 2250;
     state.goals.p    = +document.getElementById('goalP').value || 180;
     state.goals.c    = +document.getElementById('goalC').value || 220;
     state.goals.f    = +document.getElementById('goalF').value || 65;
+    const mh = parseInt(document.getElementById('goalMaxHr').value);
+    if (Number.isFinite(mh) && mh > 0) state.goals.maxHr = mh; else delete state.goals.maxHr;
     mutate('meta', 'goals');
     toast('Doelen opgeslagen', 'success');
   };

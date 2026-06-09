@@ -55,12 +55,14 @@ const extId = {
   weight: (day) => `weights:${day}`,
   foodsDay: (date) => `foods-day:${date}`,
   session: (date) => `session:${date}`,
-  measurement: (date, field) => `measurements:${date}:${field}`
+  measurement: (date, field) => `measurements:${date}:${field}`,
+  cardio: (date) => `cardio:${date}`
 };
 const UNITS = {
   'body.weight': 'kg', 'nutrition.calories': 'kcal', 'nutrition.protein': 'g',
   'nutrition.carbs': 'g', 'nutrition.fat': 'g', 'fitness.session_volume': 'kg',
-  'body.waist': 'cm', 'body.hip': 'cm', 'body.chest': 'cm', 'body.arm': 'cm', 'body.thigh': 'cm'
+  'body.waist': 'cm', 'body.hip': 'cm', 'body.chest': 'cm', 'body.arm': 'cm', 'body.thigh': 'cm',
+  'fitness.cardio_minutes': 'min'
 };
 // Veld in een measurements-record → Health Core metric_type. Ruwe waarden (geen
 // aggregatie), daarom geen formula_version nodig — net als body.weight.
@@ -121,7 +123,8 @@ function initCore() {
       ['body.hip', 'Hip circumference', 'cm'],
       ['body.chest', 'Chest circumference', 'cm'],
       ['body.arm', 'Arm circumference', 'cm'],
-      ['body.thigh', 'Thigh circumference', 'cm']
+      ['body.thigh', 'Thigh circumference', 'cm'],
+      ['fitness.cardio_minutes', 'Cardio minutes', 'min']
     ]) insMt.run(key, dn, unit, 'numeric', null);
 
     upsertStmt = c.prepare(`
@@ -213,6 +216,17 @@ export function dualWrite(acceptedRecords) {
             metric_type: metric, value: round2(num), unit: UNITS[metric],
             timestamp: date, source: shredSourceId, external_id: extId.measurement(date, field),
             source_updated_at: sua, metadata: JSON.stringify({ ...LIVE })
+          });
+        }
+      } else if (rec.type === 'cardio') {
+        const day = parseInt(rec.key, 10);
+        const mins = Number(rec.value?.durationMin);
+        if (Number.isFinite(mins) && mins > 0) {
+          const date = dayToDate(startDate, day);
+          rows.push({
+            metric_type: 'fitness.cardio_minutes', value: round2(mins), unit: UNITS['fitness.cardio_minutes'],
+            timestamp: date, source: shredSourceId, external_id: extId.cardio(date),
+            source_updated_at: epochToIso(rec.updatedAt), metadata: JSON.stringify({ ...LIVE })
           });
         }
       } else if (rec.type === 'foods') {

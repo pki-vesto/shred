@@ -2,6 +2,36 @@
 
 Dit bestand definieert het formaat voor toekomstige releases. Vul geen fictieve releases in. Voeg alleen entries toe wanneer er werkelijk iets is gewijzigd en gedeployed of bewust als release is gemarkeerd.
 
+## 2026-06-09 - v1.6.0
+
+M3-b: cardio duration/intensity logging als nieuw sync-type (#16, #17, #18).
+
+### Added
+- **Cardio-logging** op cardio-dagen (Vandaag-tab): duur, RPE, gem. HR, intervallen (bij CI) + notitie. Een gelogde duur markeert de dag automatisch voltooid.
+- **Zone-2 hartslagcontext** (#17): optionele max-HR in de doelen (Settings); bij CZ-sessies een zone-2 doelbereik (60–70%) met een in/onder/boven-zone-flag voor de gelogde HR.
+- Nieuw sync-recordtype **`cardio`** (key `<day>`, value `{durationMin,rpe,avgHr,intervalsDone,note}`, LWW), end-to-end: client `state.cardio` + `mutate`/read/write, server tabel + `TYPES`-handler + index.
+- Health Core dual-write van cardio-duur naar **`fitness.cardio_minutes`** (min).
+
+### Changed
+- `goals` meta draagt nu optioneel `maxHr` (rijdt mee op de bestaande goals-sync; backward compatible).
+- `api/test-core.mjs` uitgebreid met cardio-dual-write assert.
+
+### Data / Migrations
+- Additief: nieuwe tabel `cardio` + index; nieuwe `state.cardio` default `{}`; nieuwe `fitness.cardio_minutes` metric_type via idempotente seed. Geen wijziging aan bestaande tabellen/records.
+
+### Operations
+- `CACHE_VERSION` `shred-v19` → `shred-v20`. `shred-api` image herbouwd + herstart.
+
+### Verification
+- `node --check` op alle 8 gewijzigde modules: OK.
+- `api/test-core.mjs` in verse container: groen incl. `fitness.cardio_minutes`=32 op dag 6.
+- `api/test-sync.mjs`: groen. Extra cardio sync round-trip via de echte router: `accepted 1`, round-trip `durationMin 32 / avgHr 138 / intervalsDone 8` correct.
+- Live-serve van v20 geverifieerd. Nog niet handmatig in de browser/PWA.
+
+### Known Issues
+- Zone-2 bereik gebruikt vaste 60–70%-band op max-HR; geen lactaat/HRV-kalibratie.
+- Cardio-detail verschijnt nog niet als aparte analytics-kaart (duur gaat wel naar Health Core).
+
 ## 2026-06-09 - v1.5.0
 
 M3-a: lichaamsmetingen als nieuw sync-type (#80, #81, #82). Eerste datamodel-uitbreiding sinds de analytics-milestones — strikt additief.

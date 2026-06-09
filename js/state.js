@@ -17,6 +17,7 @@ export const state = {
   exerciseNotes: {},
   weights: {},
   measurements: {},   // measurements[day] = { waist, hip, chest, arm, thigh } in cm
+  cardio: {},         // cardio[day] = { durationMin, rpe, avgHr, intervalsDone, note }
   photos: {},
   foods: {},
   // Product library (id -> product) and meal templates (id -> template).
@@ -69,6 +70,7 @@ export async function loadState() {
   state.exerciseNotes = state.exerciseNotes || {};
   state.weights = state.weights || {};
   state.measurements = state.measurements || {};
+  state.cardio = state.cardio || {};
   state.photos = state.photos || {};
   state.foods = state.foods || {};
   state.products = state.products || {};
@@ -97,6 +99,7 @@ export async function loadState() {
 //   template:     '<templateId>'    (uuid)
 //   slot_choices: '<day>'           (waarde: { slotId: exId } voor die dag)
 //   measurements: '<day>'           (waarde: { waist, hip, chest, arm, thigh } in cm)
+//   cardio:       '<day>'           (waarde: { durationMin, rpe, avgHr, intervalsDone, note })
 export function mutate(type, key) {
   state.ts = state.ts || {};
   state.ts[type] = state.ts[type] || {};

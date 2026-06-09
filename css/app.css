@@ -235,6 +235,23 @@ button{font-family:inherit;}
 .cardio-content strong{color:var(--text);font-weight:700;}
 .cardio-options{margin-top:12px;padding:14px;background:var(--bg);border:1px solid var(--line);border-radius:var(--r-md);font-size:13px;color:var(--text-2);line-height:1.5;}
 .cardio-options strong{color:var(--green);}
+/* Cardio loggen (#16/#17/#18) */
+.cardio-log{margin-top:16px;border-top:1px solid var(--line);padding-top:16px;}
+.cardio-log-head{font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:0.08em;font-weight:800;margin-bottom:12px;}
+.cardio-fields{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
+.cardio-field label{display:block;font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:0.06em;font-weight:800;margin-bottom:5px;}
+.cardio-field .cf-in{display:flex;align-items:center;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-sm);padding:0 10px;}
+.cardio-field .cf-in input{flex:1;min-width:0;background:none;border:none;color:var(--text);font-size:16px;font-weight:700;padding:10px 0;outline:none;font-family:inherit;}
+.cardio-field .cf-in span{font-size:11px;color:var(--text-4);font-weight:700;}
+.cardio-field select{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-sm);color:var(--text);font-size:16px;font-weight:700;padding:10px;outline:none;font-family:inherit;}
+.cardio-zone{margin-top:12px;font-size:12.5px;color:var(--text-2);font-weight:600;line-height:1.4;}
+.cardio-zone.muted{color:var(--text-4);}
+.cardio-zone-flag{display:inline-block;font-size:10px;font-weight:800;padding:2px 7px;border-radius:var(--r-pill);margin-left:4px;}
+.cardio-zone-flag.good{background:var(--green-soft);color:var(--green);}
+.cardio-zone-flag.warn{background:var(--blue-soft);color:var(--blue);}
+.cardio-zone-flag.bad{background:var(--red-soft);color:var(--red);}
+.cardio-note{width:100%;margin-top:12px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-sm);color:var(--text);font-size:14px;padding:10px;outline:none;font-family:inherit;resize:vertical;box-sizing:border-box;}
+.cardio-log .btn-primary{margin-top:12px;}
 .rest-content{text-align:center;padding:14px 0 4px;color:var(--text-2);font-size:14px;line-height:1.6;}
 .rest-content .moon{font-size:30px;margin-bottom:8px;}
 .rest-content strong{color:var(--text);}

@@ -42,7 +42,7 @@ Express draait als `shred-api` container en exposeert:
 - `POST /api/meals/voice`
 - `POST /api/products/lookup`
 
-SQLite draait in WAL mode via `better-sqlite3`. Tabellen zijn recordtype-georiënteerd: `meta`, `day_log`, `sets`, `exercise_notes`, `weights`, `foods`, `products`, `meal_templates`, `slot_choices`, `measurements`, `photos`.
+SQLite draait in WAL mode via `better-sqlite3`. Tabellen zijn recordtype-georiënteerd: `meta`, `day_log`, `sets`, `exercise_notes`, `weights`, `foods`, `products`, `meal_templates`, `slot_choices`, `measurements`, `cardio`, `photos`.
 
 ## Sync Architectuur
 
