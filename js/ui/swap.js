@@ -16,7 +16,7 @@ export function openSwapSheet({ day, slot, activeExId, onChange }) {
   render();
 
   function render() {
-    const variants = variantsFor(slot.category);
+    const variants = variantsFor(slot.category, state.favoriteExercises || {});
     const rememberOn = state.slotDefaults?.[slot.id] === active;
     const rows = variants.map(rowHtml).join('');
     sheetBody().innerHTML = `
@@ -35,10 +35,20 @@ export function openSwapSheet({ day, slot, activeExId, onChange }) {
     sheetBody().querySelectorAll('[data-pick]').forEach(b => {
       b.onclick = () => pick(b.dataset.pick);
     });
+    sheetBody().querySelectorAll('[data-fav]').forEach(b => {
+      b.onclick = (e) => { e.stopPropagation(); toggleFavorite(b.dataset.fav); };
+      b.onkeydown = (e) => {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        e.preventDefault();
+        e.stopPropagation();
+        toggleFavorite(b.dataset.fav);
+      };
+    });
   }
 
   function rowHtml(v) {
     const isActive = v.id === active;
+    const isFav = !!state.favoriteExercises?.[v.id];
     const seen = lastDoneDay(v.id);
     const best = bestSet(v.id);
     const knee = v.knee_safe
@@ -47,6 +57,7 @@ export function openSwapSheet({ day, slot, activeExId, onChange }) {
     const lastTxt = seen ? `laatst: dag ${seen} · ${escapeHtml(shortDate(seen))}` : 'nog niet gedaan';
     const bestTxt = best ? ` · <span class="swap-best">best ${best.w} kg × ${best.r}</span>` : '';
     const equip = equipmentFor(v);
+    const favLabel = isFav ? 'Verwijder uit favoriete swaps' : 'Markeer als favoriete swap';
     return `<button class="swap-row${isActive ? ' active' : ''}${v.knee_safe ? '' : ' unsafe'}" data-pick="${v.id}">
       <span class="swap-dot">${isActive ? '●' : ''}</span>
       <span class="swap-body">
@@ -54,7 +65,17 @@ export function openSwapSheet({ day, slot, activeExId, onChange }) {
         <span class="swap-sub">${lastTxt}${bestTxt}</span>
         ${v.notes ? `<span class="swap-note">${escapeHtml(v.notes)}</span>` : ''}
       </span>
+      <span class="swap-fav${isFav ? ' on' : ''}" data-fav="${v.id}" role="button" tabindex="0" title="${favLabel}" aria-label="${favLabel}">${isFav ? '★' : '☆'}</span>
     </button>`;
+  }
+
+  function toggleFavorite(exId) {
+    state.favoriteExercises = state.favoriteExercises || {};
+    if (state.favoriteExercises[exId]) delete state.favoriteExercises[exId];
+    else state.favoriteExercises[exId] = true;
+    mutate('meta', 'favoriteExercises');
+    tick(8);
+    render();
   }
 
   function pick(exId) {

@@ -2,7 +2,7 @@
 
 Dit bestand definieert het formaat voor toekomstige releases. Vul geen fictieve releases in. Voeg alleen entries toe wanneer er werkelijk iets is gewijzigd en gedeployed of bewust als release is gemarkeerd.
 
-## 2026-06-15 - v1.8.0
+## 2026-06-15 - v1.9.0
 
 Per-domein CSV-export voor voeding en lichaam (#16 — roadmap-doelen 48 en 94).
 
@@ -11,11 +11,26 @@ Per-domein CSV-export voor voeding en lichaam (#16 — roadmap-doelen 48 en 94).
 - Nieuwe pure CSV-builders in `js/export.js`: voeding per food-log-item met macro's; lichaam per dag met gewicht en metingen. CSV-cellen worden quote-safe geescaped.
 
 ### Operations
-- `CACHE_VERSION` `shred-v21` → `shred-v22`; nieuw shell-asset `js/export.js` toegevoegd.
+- `CACHE_VERSION` `shred-v22` → `shred-v23`; nieuw shell-asset `js/export.js` toegevoegd.
 
 ### Verification
 - `node --check` op `js/export.js`, `js/ui/settings.js` en `service-worker.js`: OK.
 - Lokale CSV-logica-test met productnaam met komma/quotes: kolomtelling blijft correct; lege voeding/lichaam-state levert geen downloadbare CSV.
+
+## 2026-06-15 - v1.8.0
+
+Favoriete oefening-swaps (#17 — roadmap-doel 13).
+
+### Added
+- Ster-toggle in de oefening-swap-sheet: favoriete varianten verschijnen bovenaan binnen hun knieveiligheidsgroep.
+- Nieuw gesynct meta-veld `favoriteExercises`, via hetzelfde meta-syncpad als `slotDefaults`.
+
+### Operations
+- `CACHE_VERSION` `shred-v21` → `shred-v22` (shell-assets `css/app.css`, `js/state.js`, `js/sync.js`, `js/exercises.js` en `js/ui/swap.js` gewijzigd).
+
+### Verification
+- `node --check` op `js/state.js`, `js/sync.js`, `js/ui/swap.js`, `js/exercises.js` en `service-worker.js`: OK.
+- Lokale logica-test: meta read/write round-trip bewaart favorieten; een favoriete knie-onvriendelijke oefening komt niet boven een knieveilige niet-favoriet.
 
 ## 2026-06-15 - v1.7.0
 
