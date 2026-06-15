@@ -130,13 +130,14 @@ function buildOutboundRecords() {
   return out;
 }
 
-function readValue(type, key) {
+export function readValue(type, key) {
   switch (type) {
     case 'meta':
       if (key === 'goals')           return state.goals;
       if (key === 'startDate')       return state.startDate;
       if (key === 'suggestedDeload') return state.suggestedDeload;
       if (key === 'slotDefaults')    return state.slotDefaults;
+      if (key === 'favoriteExercises') return state.favoriteExercises || {};
       return undefined;
     case 'day_log': {
       const n = parseInt(key);
@@ -178,13 +179,14 @@ function applyIncomingRecords(records) {
   return applied;
 }
 
-function writeValue(type, key, value) {
+export function writeValue(type, key, value) {
   switch (type) {
     case 'meta':
       if (key === 'goals')           state.goals = value;
       else if (key === 'startDate')  state.startDate = value;
       else if (key === 'suggestedDeload') state.suggestedDeload = value;
       else if (key === 'slotDefaults') state.slotDefaults = value || {};
+      else if (key === 'favoriteExercises') state.favoriteExercises = value || {};
       break;
     case 'day_log': {
       const n = parseInt(key);

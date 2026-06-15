@@ -191,6 +191,51 @@ export function macroWeeklySeries(uptoWeek = weekOf(todayNum())) {
   return out;
 }
 
+export function nutritionContextSplit(uptoDay = todayNum()) {
+  const groups = {
+    weekend: emptyNutritionGroup(),
+    weekday: emptyNutritionGroup(),
+    trainingDay: emptyNutritionGroup(),
+    restDay: emptyNutritionGroup()
+  };
+
+  for (let day = 1; day <= uptoDay; day++) {
+    const totals = dayTotals(day);
+    if (totals.kcal <= 0 && totals.p <= 0) continue;
+
+    const date = dateForDay(day);
+    const weekendKey = [0, 6].includes(date.getDay()) ? 'weekend' : 'weekday';
+    const sessionKey = sessionFor(date) === 'R' ? 'restDay' : 'trainingDay';
+    addNutritionDay(groups[weekendKey], totals);
+    addNutritionDay(groups[sessionKey], totals);
+  }
+
+  return {
+    weekend: finalizeNutritionGroup(groups.weekend),
+    weekday: finalizeNutritionGroup(groups.weekday),
+    trainingDay: finalizeNutritionGroup(groups.trainingDay),
+    restDay: finalizeNutritionGroup(groups.restDay)
+  };
+}
+
+function emptyNutritionGroup() {
+  return { days: 0, kcalSum: 0, proteinSum: 0 };
+}
+
+function addNutritionDay(group, totals) {
+  group.days++;
+  group.kcalSum += totals.kcal;
+  group.proteinSum += totals.p;
+}
+
+function finalizeNutritionGroup(group) {
+  return {
+    days: group.days,
+    avgKcal: group.days ? group.kcalSum / group.days : null,
+    avgProtein: group.days ? group.proteinSum / group.days : null
+  };
+}
+
 // Calorie-trend vs gewichtstrend (#15 / roadmap-doel 45). Pure, deterministische
 // helper die het 14-daags caloriegemiddelde naast de EWMA-gewichtstrend zet en
 // een niet-causale duiding teruggeeft. Geen TDEE-claim, geen "X veroorzaakt Y":
