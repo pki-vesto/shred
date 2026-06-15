@@ -12,6 +12,8 @@ const HEALTH_TIMEOUT_MS = 2000;
 const PERIOD_MS = 30_000;
 
 let lastSyncTs = 0;
+let lastApplied = 0;
+let lastError = '';
 let timer = null;
 let inflight = false;
 let lastStatus = { state: 'idle', at: 0 };
@@ -24,10 +26,16 @@ export function onStatus(cb) {
 }
 
 export function getStatus() {
-  return { ...lastStatus, lastSyncTs };
+  return { ...lastStatus, lastSyncTs, lastApplied, lastError, pendingOutbound: pendingOutboundCount() };
+}
+
+export function getDiagnostics() {
+  return getStatus();
 }
 
 function emit(state, extra = {}) {
+  if (state === 'ok') lastError = '';
+  if (state === 'fail' || state === 'offline') lastError = extra.error || state;
   lastStatus = { state, at: Date.now(), ...extra };
   for (const cb of subscribers) cb(getStatus());
 }
@@ -56,7 +64,7 @@ export async function syncNow() {
   inflight = true;
   emit('syncing');
   try {
-    if (!(await pingHealth())) { emit('offline'); return; }
+    if (!(await pingHealth())) { emit('offline', { error: 'API niet bereikbaar' }); return; }
 
     // Eerst gequeue'de spraak-opnames afhandelen (audio → voorstel), dan de
     // gewone state-sync. Geen-op als de wachtrij leeg is.
@@ -66,7 +74,9 @@ export async function syncNow() {
     if (outbound.length) {
       const r = await api('POST', '/api/sync', { records: outbound });
       if (r === 'unauthorized') return;
-      if (!r.ok) { emit('fail'); return; }
+      if (!r.ok) { emit('fail', { error: 'Verzenden mislukt' }); return; }
+      clearOutboundRecords(outbound);
+      await saveState();
     }
 
     await pushPhotoDeletes();
@@ -74,10 +84,11 @@ export async function syncNow() {
 
     const r2 = await api('GET', `/api/sync?since=${lastSyncTs}`);
     if (r2 === 'unauthorized') return;
-    if (!r2.ok) { emit('fail'); return; }
+    if (!r2.ok) { emit('fail', { error: 'Ophalen mislukt' }); return; }
     const data = await r2.json();
 
     const applied = applyIncomingRecords(data.records);
+    lastApplied = applied;
     lastSyncTs = data.serverTime;
     await idb.put(getDB(), 'kv', { lastSyncTs }, SYNC_META_KEY);
     if (applied > 0) await saveState();
@@ -88,9 +99,22 @@ export async function syncNow() {
     }
   } catch (e) {
     console.error('sync error', e);
-    emit('fail');
+    emit('fail', { error: e?.message || 'Sync mislukt' });
   } finally {
     inflight = false;
+  }
+}
+
+function pendingOutboundCount() {
+  try { return buildOutboundRecords().length; }
+  catch { return 0; }
+}
+
+function clearOutboundRecords(records) {
+  for (const rec of records) {
+    if (!state.ts?.[rec.type]) continue;
+    delete state.ts[rec.type][rec.key];
+    if (!Object.keys(state.ts[rec.type]).length) delete state.ts[rec.type];
   }
 }
 

@@ -17,18 +17,29 @@ export function renderTopbar() {
 }
 
 // ---- Toast (with optional success icon) ----
-export function toast(msg, type) {
+export function toast(msg, type, opts = {}) {
   const host = document.getElementById('toastHost');
   if (!host) return;
   const el = document.createElement('div');
-  el.className = 'toast' + (type ? ' ' + type : '');
+  el.className = 'toast' + (type ? ' ' + type : '') + (opts.onClick ? ' action' : '');
   el.innerHTML = (type === 'success' ? `<span class="ic">${CHECK_SVG}</span>` : '')
                + `<span>${escapeHtml(msg)}</span>`;
+  if (opts.onClick) {
+    el.tabIndex = 0;
+    el.role = 'button';
+    el.onclick = opts.onClick;
+    el.onkeydown = (e) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      e.preventDefault();
+      opts.onClick();
+    };
+  }
   host.appendChild(el);
+  if (opts.timeout === 0) return;
   setTimeout(() => {
     el.classList.add('out');
     setTimeout(() => el.remove(), 320);
-  }, 2000);
+  }, opts.timeout || 2000);
 }
 
 // ---- Progress ring (small svg in session-card header) ----

@@ -116,7 +116,35 @@ onSwipe(document.getElementById('tab-food'), {
 
 // Service worker — last, never blocks first paint.
 if ('serviceWorker' in navigator) {
+  let reloadingForSw = false;
+  let updatePromptShown = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (reloadingForSw) return;
+    reloadingForSw = true;
+    window.location.reload();
+  });
+
+  function showUpdatePrompt(reg) {
+    if (!navigator.serviceWorker.controller) return;
+    if (updatePromptShown) return;
+    updatePromptShown = true;
+    toast('Nieuwe versie beschikbaar — tik om te herladen', 'success', {
+      timeout: 0,
+      onClick: () => reg.waiting?.postMessage('skip-waiting')
+    });
+  }
+
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/service-worker.js').catch(err => console.warn('SW registration failed', err));
+    navigator.serviceWorker.register('/service-worker.js').then(reg => {
+      if (reg.waiting) showUpdatePrompt(reg);
+      reg.addEventListener('updatefound', () => {
+        const worker = reg.installing;
+        if (!worker) return;
+        worker.addEventListener('statechange', () => {
+          if (worker.state === 'installed' && navigator.serviceWorker.controller) showUpdatePrompt(reg);
+        });
+      });
+      reg.update().catch(() => {});
+    }).catch(err => console.warn('SW registration failed', err));
   });
 }

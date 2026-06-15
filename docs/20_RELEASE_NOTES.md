@@ -2,6 +2,25 @@
 
 Dit bestand definieert het formaat voor toekomstige releases. Vul geen fictieve releases in. Voeg alleen entries toe wanneer er werkelijk iets is gewijzigd en gedeployed of bewust als release is gemarkeerd.
 
+## 2026-06-15 - v1.8.0
+
+Service-worker update-UX en sync-diagnostics (#19 — platformdoelen 182 en 183).
+
+### Added
+- Klikbare update-toast **"Nieuwe versie beschikbaar — tik om te herladen"** wanneer een nieuwe service worker klaarstaat.
+- Compacte sync-diagnostiek in Settings: status, laatste sync, laatst toegepaste records, lokale wachtrij en laatste fout.
+
+### Changed
+- Service worker wacht nu op de expliciete client-actie voordat `skipWaiting` wordt aangeroepen, zodat de update-UX zichtbaar is.
+- Na succesvolle sync-POST worden lokaal verzonden `state.ts`-items opgeruimd, zodat de pending-teller daadwerkelijk naar 0 kan.
+
+### Operations
+- `CACHE_VERSION` `shred-v21` → `shred-v22` (shell-assets `css/app.css`, `js/app.js`, `js/sync.js`, `js/ui/components.js`, `js/ui/settings.js` en `service-worker.js` gewijzigd).
+
+### Verification
+- `node --check` op `js/app.js`, `js/sync.js`, `js/ui/settings.js`, `js/ui/components.js` en `service-worker.js`: OK.
+- Lokale diagnostics-test: pending outbound telt lokale `state.ts` records en daalt na clear; status snapshot bevat `lastApplied`.
+
 ## 2026-06-15 - v1.7.0
 
 Calorie-trend vs gewichtstrend-kaart op Overzicht (#15 — roadmap-doel 45).
@@ -242,4 +261,3 @@ Eerste formeel gelogde release. De staat daarvóór was niet geversioneerd; dit 
 - Health Core dual-write getest indien geraakt.
 - Backup/rollback impact benoemd.
 - Geen secrets in release notes.
-
