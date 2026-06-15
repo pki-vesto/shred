@@ -2,7 +2,7 @@ import { state, saveState, mutate, wipeAll } from '../state.js';
 import { getStartDate, todayNum } from '../helpers.js';
 import { renderTopbar, toast } from './components.js';
 import { renderToday } from './today.js';
-import { onStatus, syncNow } from '../sync.js';
+import { getDiagnostics, onStatus, syncNow } from '../sync.js';
 import { openLibraryManager, openTemplatesManager } from './food.js';
 import { isVoiceEnabled, setVoiceEnabled, testMic } from './voice.js';
 import { isRecordingSupported, unsupportedReason } from '../voice/record.js';
@@ -69,18 +69,31 @@ export function renderSettings() {
   if (sec) {
     sec.innerHTML = `<h2 class="section-title">Sync</h2>
       <div class="set-card">
-        <div class="set-hint">Sync loopt automatisch over je tailnet — geen token nodig. Zorg dat Tailscale aan staat op dit apparaat zodat iPhone en Mac dezelfde data zien.<br>Status: <b id="syncStatusInline">—</b></div>
+        <div class="set-hint">Sync loopt automatisch over je tailnet — geen token nodig. Zorg dat Tailscale aan staat op dit apparaat zodat iPhone en Mac dezelfde data zien.</div>
+        <div class="sync-diag">
+          <div><span>Status</span><b id="syncStatusInline">—</b></div>
+          <div><span>Laatste sync</span><b id="syncLastInline">—</b></div>
+          <div><span>Toegepast</span><b id="syncAppliedInline">0 records</b></div>
+          <div><span>Wachtrij</span><b id="syncPendingInline">0 lokale wijzigingen te verzenden</b></div>
+          <div><span>Laatste fout</span><b id="syncErrorInline">—</b></div>
+        </div>
       </div>
       <div style="display:flex;gap:10px;margin-top:10px;">
         <button id="syncNowBtn" class="btn-ghost" style="flex:1;">${SYNC_ICON}Sync nu</button>
       </div>`;
     document.getElementById('syncNowBtn').onclick = () => syncNow();
-    onStatus((s) => {
-      const line = document.getElementById('syncStatusInline');
-      if (!line) return;
+    const renderSyncDiag = (s = getDiagnostics()) => {
+      const status = document.getElementById('syncStatusInline');
+      if (!status) return;
       const when = s.lastSyncTs ? new Date(s.lastSyncTs).toLocaleString('nl-NL') : '—';
-      line.textContent = `${s.state} · laatste ${when}`;
-    });
+      status.textContent = s.state;
+      document.getElementById('syncLastInline').textContent = when;
+      document.getElementById('syncAppliedInline').textContent = `${s.lastApplied || 0} records`;
+      document.getElementById('syncPendingInline').textContent = `${s.pendingOutbound || 0} lokale wijzigingen te verzenden`;
+      document.getElementById('syncErrorInline').textContent = s.lastError || '—';
+    };
+    renderSyncDiag();
+    onStatus(renderSyncDiag);
   }
 
   // Voeding — bibliotheek + templates beheren

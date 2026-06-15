@@ -1,6 +1,6 @@
 // Bump this string on every deploy that changes app shell assets.
 // The activate step deletes any cache whose name does not match.
-const CACHE_VERSION = 'shred-v25';
+const CACHE_VERSION = 'shred-v26';
 const SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const PHOTO_CACHE = `${CACHE_VERSION}-photos`;
 
@@ -53,7 +53,6 @@ self.addEventListener('install', (event) => {
         try { await cache.add(new Request(url, { cache: 'reload' })); }
         catch (e) { console.warn('[sw] precache skip', url, e?.message); }
       }));
-      self.skipWaiting();
     })
   );
 });

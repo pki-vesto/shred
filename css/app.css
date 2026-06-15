@@ -602,6 +602,10 @@ button{font-family:inherit;}
 .field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
 .set-hint{font-size:12px;color:var(--text-3);padding:0 18px 16px;line-height:1.5;}
 .set-hint b{color:var(--text-2);}
+.sync-diag{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:12px 18px 16px;}
+.sync-diag div{background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-sm);padding:9px 10px;}
+.sync-diag span{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--text-4);font-weight:800;margin-bottom:4px;}
+.sync-diag b{display:block;font-size:12px;color:var(--text);line-height:1.3;}
 .btn-primary{background:var(--amber);border:none;color:#0b0c0e;padding:13px;border-radius:var(--r-md);font-size:14px;font-weight:800;cursor:pointer;width:100%;transition:transform .12s;}
 .btn-primary:active{transform:scale(.98);}
 .btn-ghost{background:var(--surface);border:1px solid var(--line);color:var(--text);padding:14px;border-radius:var(--r-md);font-size:14px;font-weight:600;cursor:pointer;width:100%;display:flex;align-items:center;justify-content:center;gap:8px;}
@@ -615,6 +619,8 @@ button{font-family:inherit;}
 /* ---------- TOAST ---------- */
 .toast-host{position:fixed;left:0;right:0;bottom:calc(86px + env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:center;gap:8px;z-index:60;pointer-events:none;padding:0 16px;}
 .toast{background:var(--surface-3);border:1px solid var(--line-2);color:var(--text);padding:12px 18px;border-radius:var(--r-pill);font-size:14px;font-weight:700;box-shadow:var(--shadow-pop);display:flex;align-items:center;gap:10px;animation:toastIn .3s var(--ease);max-width:100%;}
+.toast.action{pointer-events:auto;cursor:pointer;}
+.toast.action:focus-visible{outline:2px solid var(--amber);outline-offset:2px;}
 .toast.out{animation:toastOut .3s var(--ease) forwards;}
 .toast .ic{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 .toast.success .ic{background:var(--green);}
