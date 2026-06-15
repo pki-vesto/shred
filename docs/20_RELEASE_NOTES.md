@@ -2,6 +2,20 @@
 
 Dit bestand definieert het formaat voor toekomstige releases. Vul geen fictieve releases in. Voeg alleen entries toe wanneer er werkelijk iets is gewijzigd en gedeployed of bewust als release is gemarkeerd.
 
+## 2026-06-15 - v1.10.0
+
+Weekend- en trainingsdag/rustdag-voedingsanalyse op Overzicht (#14 — roadmap-doelen 41 en 43).
+
+### Added
+- Nieuwe kaart **Voedingscontext** in `Voortgang & tempo`: vergelijkt weekend vs doordeweeks en trainingsdag vs rustdag op gemiddelde kcal en eiwit, inclusief kcal-delta en confidence-badge bij dunne data.
+- Nieuwe pure helper `nutritionContextSplit(uptoDay)` in `js/dashboardMetrics.js`; read-only over bestaande `state.foods`, `dateForDay(day)` en `sessionFor(date)`.
+
+### Operations
+- `CACHE_VERSION` `shred-v23` → `shred-v24` (shell-assets `css/app.css`, `js/dashboardMetrics.js` en `js/ui/overview.js` gewijzigd).
+
+### Verification
+- `node --check` op `js/dashboardMetrics.js`, `js/ui/overview.js` en `service-worker.js`: OK.
+- Lokale logica-test met mock-state: hogere weekend-kcal geeft positieve weekend-delta; hogere K-dag-kcal geeft positieve trainingsdag-delta; lege state geeft fallback zonder `NaN`.
 ## 2026-06-15 - v1.9.0
 
 Per-domein CSV-export voor voeding en lichaam (#16 — roadmap-doelen 48 en 94).
