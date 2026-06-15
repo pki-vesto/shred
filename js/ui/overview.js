@@ -1,7 +1,7 @@
 import { state, saveState } from '../state.js';
 import { SESSIONS, sessionFor } from '../sessions.js';
 import { TOTAL_DAYS, dateForDay, todayNum, dayIsComplete, isHardcodedDeload, weekOf, resolveSlots, shortDate } from '../helpers.js';
-import { dashboardKpis, weeklyReview, macroWeeklySeries, goalPace, calorieVsWeight } from '../dashboardMetrics.js';
+import { dashboardKpis, weeklyReview, macroWeeklySeries, goalPace, calorieVsWeight, nutritionContextSplit, confLevel } from '../dashboardMetrics.js';
 import { confBadge } from './components.js';
 import { weeklyVolume, kneeLoadForSession, weekPRSummary, weeklyVolumeSeries, prTimeline, PR_LABELS } from '../trainingMetrics.js';
 
@@ -99,6 +99,29 @@ function deltaChip(delta) {
   const tone = pct > 2 ? 'up' : pct < -2 ? 'down' : 'flat';
   const sign = pct > 0 ? '+' : '';
   return `<span class="ti-delta ${tone}">${sign}${pct}% vs vorige week</span>`;
+}
+
+function fmtMacro(n, suffix) {
+  return n === null ? '—' : `${Math.round(n)}${suffix}`;
+}
+
+function contextDelta(a, b, posLabel, negLabel) {
+  if (!a.days || !b.days) return 'te weinig data';
+  const diff = Math.round(a.avgKcal - b.avgKcal);
+  if (Math.abs(diff) < 25) return 'nagenoeg gelijk';
+  return `${diff > 0 ? '+' : ''}${diff} kcal ${diff > 0 ? posLabel : negLabel}`;
+}
+
+function contextRow(leftLabel, left, rightLabel, right, deltaText) {
+  const conf = confBadge(confLevel(Math.min(left.days, right.days), 1, 3));
+  return `
+    <div class="ti-context-row">
+      <div>
+        <b>${leftLabel} vs ${rightLabel} ${conf}</b>
+        <span>${left.days}/${right.days} gelogde dagen · ${fmtMacro(left.avgKcal, ' kcal')} / ${fmtMacro(right.avgKcal, ' kcal')} · ${fmtMacro(left.avgProtein, ' g')} / ${fmtMacro(right.avgProtein, ' g')} eiwit</span>
+      </div>
+      <span class="ti-delta flat">${deltaText}</span>
+    </div>`;
 }
 
 const KNEE_BAND = {
@@ -225,8 +248,10 @@ function renderProgressIntel() {
   const macro = macroWeeklySeries(week);
   const loggedWeeks = macro.filter(m => m.days > 0);
   const cvw = calorieVsWeight(today);
+  const context = nutritionContextSplit(today);
+  const contextDays = context.weekend.days + context.weekday.days;
 
-  if (!pace.expected && !loggedWeeks.length && cvw.empty) { wrap.innerHTML = ''; return; }
+  if (!pace.expected && !loggedWeeks.length && cvw.empty && !contextDays) { wrap.innerHTML = ''; return; }
 
   // Goal-pace card.
   const pacePct = pace.trainingPct === null ? null : Math.round(pace.trainingPct * 100);
@@ -269,6 +294,27 @@ function renderProgressIntel() {
       </div>`;
   }
 
+  let contextCard = '';
+  if (contextDays < 2) {
+    contextCard = `
+      <div class="ti-card">
+        <div class="ti-k">Voedingscontext</div>
+        <div class="ti-sub">Log meer dagen voor weekend- en trainingsdag-analyse.</div>
+      </div>`;
+  } else {
+    contextCard = `
+      <div class="ti-card">
+        <div class="ti-card-top">
+          <div><div class="ti-k">Voedingscontext</div><div class="ti-v">${contextDays}<small> dagen</small></div></div>
+          <span class="ti-delta flat">read-only</span>
+        </div>
+        <div class="ti-context-list">
+          ${contextRow('Weekend', context.weekend, 'doordeweeks', context.weekday, contextDelta(context.weekend, context.weekday, 'in weekend', 'doordeweeks'))}
+          ${contextRow('Trainingsdag', context.trainingDay, 'rustdag', context.restDay, contextDelta(context.trainingDay, context.restDay, 'op trainingsdagen', 'op rustdagen'))}
+        </div>
+      </div>`;
+  }
+
   // Calorie-trend vs gewichtstrend (#15 / roadmap-doel 45): regelgebaseerde,
   // niet-causale duiding op één regel, met confidence-badge.
   let cvwCard = '';
@@ -295,5 +341,5 @@ function renderProgressIntel() {
 
   wrap.innerHTML = `
     <div class="ti-head"><h3>Voortgang &amp; tempo</h3><span>dag ${today}</span></div>
-    ${paceCard}${macroCard}${cvwCard}`;
+    ${paceCard}${macroCard}${contextCard}${cvwCard}`;
 }
