@@ -105,6 +105,14 @@ export function dashboardKpis(day = todayNum()) {
   ];
 }
 
+export function trainingHeatmapStatus(day, today = todayNum()) {
+  if (day > today) return 'future';
+  const code = sessionFor(dateForDay(day));
+  if (code === 'R') return 'rest';
+  if (dayIsComplete(day)) return 'done';
+  return day < today ? 'missed' : 'pending';
+}
+
 // Volledig weekrapport (#160): training, lichaam, voeding, eiwit, herstel en
 // risico's — elk met een confidence (#109) — plus één concrete aanbeveling.
 export function weeklyReview(day = todayNum()) {
@@ -323,7 +331,8 @@ function missedTrainingDays(start, end) {
   return missed;
 }
 
-function nutritionScoreForDay(day) {
+export function nutritionScoreForDay(day) {
+  if (!hasFoodLog(day)) return null;
   const totals = dayTotals(day);
   const goals = state.goals || {};
   const kcalScore = targetScore(totals.kcal, goals.kcal || 0, 0.12);

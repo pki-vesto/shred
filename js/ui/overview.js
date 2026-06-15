@@ -1,7 +1,7 @@
 import { state, saveState } from '../state.js';
 import { SESSIONS, sessionFor } from '../sessions.js';
 import { TOTAL_DAYS, dateForDay, todayNum, dayIsComplete, isHardcodedDeload, weekOf, resolveSlots, shortDate } from '../helpers.js';
-import { dashboardKpis, weeklyReview, macroWeeklySeries, goalPace, calorieVsWeight, nutritionContextSplit, confLevel } from '../dashboardMetrics.js';
+import { dashboardKpis, weeklyReview, macroWeeklySeries, goalPace, calorieVsWeight, nutritionScoreForDay, trainingHeatmapStatus, nutritionContextSplit, confLevel } from '../dashboardMetrics.js';
 import { confBadge } from './components.js';
 import { weeklyVolume, kneeLoadForSession, weekPRSummary, weeklyVolumeSeries, prTimeline, PR_LABELS } from '../trainingMetrics.js';
 
@@ -24,6 +24,7 @@ export function renderOverview(switchTab) {
   renderDashboard();
   renderTrainingIntel();
   renderProgressIntel();
+  renderHeatmaps(switchTab);
 
   const content = document.getElementById('overviewContent');
   const today = todayNum();
@@ -129,6 +130,78 @@ const KNEE_BAND = {
   medium: { tone: 'warn', label: 'Matig',  text: 'Directe quad-belasting deze sessie.' },
   high:   { tone: 'bad',  label: 'Hoog',   text: 'Knie-onvriendelijke oefening(en) belast.' }
 };
+
+let heatmapLayer = 'training';
+
+const TRAINING_HM = {
+  done: ['done', 'Voltooid'],
+  missed: ['missed', 'Gemist'],
+  pending: ['pending', 'Vandaag open'],
+  rest: ['rest', 'Rustdag'],
+  future: ['future', 'Toekomst']
+};
+
+function nutritionBand(score) {
+  if (score === null) return ['missing', 'Niet gelogd'];
+  if (score >= 85) return ['high', `${Math.round(score)}% compliance`];
+  if (score >= 70) return ['mid', `${Math.round(score)}% compliance`];
+  if (score >= 45) return ['low', `${Math.round(score)}% compliance`];
+  return ['bad', `${Math.round(score)}% compliance`];
+}
+
+function renderHeatmaps(switchTab) {
+  const wrap = document.getElementById('heatmapIntel');
+  if (!wrap) return;
+  const today = todayNum();
+  let grid = '';
+  for (let w = 0; w < 13; w++) {
+    const weekStart = w * 7 + 1;
+    grid += `<div class="hm-week"><div class="hm-week-label">W${w + 1}</div>`;
+    for (let d = 0; d < 7; d++) {
+      const day = weekStart + d;
+      if (day > TOTAL_DAYS) { grid += '<div class="hm-cell empty"></div>'; continue; }
+      if (heatmapLayer === 'training') {
+        const status = trainingHeatmapStatus(day, today);
+        const meta = TRAINING_HM[status];
+        grid += `<button class="hm-cell hm-training ${meta[0]}" data-day="${day}" title="Dag ${day}: ${meta[1]}"></button>`;
+      } else {
+        const future = day > today;
+        const score = future ? null : nutritionScoreForDay(day);
+        const band = future ? ['future', 'Toekomst'] : nutritionBand(score);
+        grid += `<button class="hm-cell hm-nutrition ${band[0]}" data-day="${day}" title="Dag ${day}: ${band[1]}"></button>`;
+      }
+    }
+    grid += '</div>';
+  }
+  wrap.innerHTML = `
+    <div class="ti-head">
+      <h3>90-dagen heatmap</h3>
+      <span>${heatmapLayer === 'training' ? 'training' : 'voeding'}</span>
+    </div>
+    <div class="heatmap-card">
+      <div class="hm-controls" role="group" aria-label="Heatmap-laag">
+        <button class="${heatmapLayer === 'training' ? 'active' : ''}" data-layer="training">Training</button>
+        <button class="${heatmapLayer === 'nutrition' ? 'active' : ''}" data-layer="nutrition">Voeding</button>
+      </div>
+      <div class="hm-grid">${grid}</div>
+      <div class="hm-legend">
+        ${heatmapLayer === 'training'
+          ? '<span><i class="done"></i>Voltooid</span><span><i class="missed"></i>Gemist</span><span><i class="rest"></i>Rust</span><span><i class="future"></i>Toekomst</span>'
+          : '<span><i class="high"></i>Hoog</span><span><i class="mid"></i>Oké</span><span><i class="low"></i>Laag</span><span><i class="missing"></i>Niet gelogd</span>'}
+      </div>
+    </div>`;
+
+  wrap.querySelectorAll('[data-layer]').forEach(btn => {
+    btn.onclick = () => { heatmapLayer = btn.dataset.layer; renderHeatmaps(switchTab); };
+  });
+  wrap.querySelectorAll('.hm-cell[data-day]').forEach(el => {
+    el.onclick = () => {
+      state.viewDay = +el.dataset.day;
+      saveState();
+      switchTab('today');
+    };
+  });
+}
 
 // Verticale mini-barreeks (sparkline). items: [{label, value, tone, ref}].
 function sparkBars(items, maxVal) {
