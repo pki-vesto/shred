@@ -2,6 +2,21 @@
 
 Dit bestand definieert het formaat voor toekomstige releases. Vul geen fictieve releases in. Voeg alleen entries toe wanneer er werkelijk iets is gewijzigd en gedeployed of bewust als release is gemarkeerd.
 
+## 2026-06-15 - v1.9.0
+
+Per-domein CSV-export voor voeding en lichaam (#16 — roadmap-doelen 48 en 94).
+
+### Added
+- Nieuwe Settings-knoppen **Voeding exporteren (CSV)** en **Lichaam exporteren (CSV)** naast de bestaande JSON-backup.
+- Nieuwe pure CSV-builders in `js/export.js`: voeding per food-log-item met macro's; lichaam per dag met gewicht en metingen. CSV-cellen worden quote-safe geescaped.
+
+### Operations
+- `CACHE_VERSION` `shred-v22` → `shred-v23`; nieuw shell-asset `js/export.js` toegevoegd.
+
+### Verification
+- `node --check` op `js/export.js`, `js/ui/settings.js` en `service-worker.js`: OK.
+- Lokale CSV-logica-test met productnaam met komma/quotes: kolomtelling blijft correct; lege voeding/lichaam-state levert geen downloadbare CSV.
+
 ## 2026-06-15 - v1.8.0
 
 Favoriete oefening-swaps (#17 — roadmap-doel 13).
