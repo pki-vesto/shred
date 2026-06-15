@@ -2,6 +2,22 @@
 
 Dit bestand definieert het formaat voor toekomstige releases. Vul geen fictieve releases in. Voeg alleen entries toe wanneer er werkelijk iets is gewijzigd en gedeployed of bewust als release is gemarkeerd.
 
+## 2026-06-15 - v1.8.0
+
+90-dagen heatmaps voor training en voeding (#18 — roadmap-doelen 152, 153 en 154).
+
+### Added
+- Nieuwe **90-dagen heatmap** op Overzicht met toggle voor `Training` en `Voeding`.
+- Trainingslaag onderscheidt voltooid, gemist, rust en toekomst; voedingslaag toont compliance-intensiteit en onderscheidt ongelogde dagen van lage score.
+- `nutritionScoreForDay(day)` en `trainingHeatmapStatus(day)` als pure helpers in `js/dashboardMetrics.js`.
+
+### Operations
+- `CACHE_VERSION` `shred-v21` → `shred-v22` (shell-assets `css/app.css`, `index.html`, `js/dashboardMetrics.js` en `js/ui/overview.js` gewijzigd).
+
+### Verification
+- `node --check` op `js/dashboardMetrics.js`, `js/ui/overview.js` en `service-worker.js`: OK.
+- Lokale logica-test: ongelogde voeding geeft `null`, gelogde voeding score 0-100, gemiste K-dag classificeert als `missed`, R-dag als `rest`.
+
 ## 2026-06-15 - v1.7.0
 
 Calorie-trend vs gewichtstrend-kaart op Overzicht (#15 — roadmap-doel 45).
@@ -242,4 +258,3 @@ Eerste formeel gelogde release. De staat daarvóór was niet geversioneerd; dit 
 - Health Core dual-write getest indien geraakt.
 - Backup/rollback impact benoemd.
 - Geen secrets in release notes.
-
