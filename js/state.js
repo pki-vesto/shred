@@ -28,9 +28,11 @@ export const state = {
   suggestedDeload: {},
   // Exercise-swap: welke oefening Peter koos voor een slot op een specifieke
   // dag (slotChoices[day][slotId] = exId), en de onthouden standaard-voorkeur
-  // per slot tussen sessies door (slotDefaults[slotId] = exId).
+  // per slot tussen sessies door (slotDefaults[slotId] = exId). Favorieten
+  // sturen alleen de swap-sortering; exercise-ids blijven stabiel.
   slotChoices: {},
   slotDefaults: {},
+  favoriteExercises: {},
   startDate: null,
   // Per-record updatedAt for sync — ts[type][key] = ms epoch.
   ts: {}
@@ -79,6 +81,7 @@ export async function loadState() {
   state.suggestedDeload = state.suggestedDeload || {};
   state.slotChoices = state.slotChoices || {};
   state.slotDefaults = state.slotDefaults || {};
+  state.favoriteExercises = state.favoriteExercises || {};
   state.ts = state.ts || {};
 }
 
@@ -89,7 +92,7 @@ export async function loadState() {
 // Types: 'meta' | 'day_log' | 'sets' | 'exercise_notes' | 'weights' |
 //        'foods' | 'product' | 'template' | 'slot_choices' | 'measurements'
 // Key formats:
-//   meta:         'goals' | 'startDate' | 'suggestedDeload' | 'slotDefaults'
+//   meta:         'goals' | 'startDate' | 'suggestedDeload' | 'slotDefaults' | 'favoriteExercises'
 //   day_log:      '<day>'           (e.g. '7')
 //   sets:         '<exId>:<day>'    (e.g. 'bench:5')
 //   exercise_notes: '<exId>:<day>'

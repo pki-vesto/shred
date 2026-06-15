@@ -105,6 +105,14 @@ export function dashboardKpis(day = todayNum()) {
   ];
 }
 
+export function trainingHeatmapStatus(day, today = todayNum()) {
+  if (day > today) return 'future';
+  const code = sessionFor(dateForDay(day));
+  if (code === 'R') return 'rest';
+  if (dayIsComplete(day)) return 'done';
+  return day < today ? 'missed' : 'pending';
+}
+
 // Volledig weekrapport (#160): training, lichaam, voeding, eiwit, herstel en
 // risico's — elk met een confidence (#109) — plus één concrete aanbeveling.
 export function weeklyReview(day = todayNum()) {
@@ -181,6 +189,51 @@ export function macroWeeklySeries(uptoWeek = weekOf(todayNum())) {
     out.push({ week: w, days: n, avgKcal: n ? kcalSum / n : null, avgP: n ? pSum / n : null });
   }
   return out;
+}
+
+export function nutritionContextSplit(uptoDay = todayNum()) {
+  const groups = {
+    weekend: emptyNutritionGroup(),
+    weekday: emptyNutritionGroup(),
+    trainingDay: emptyNutritionGroup(),
+    restDay: emptyNutritionGroup()
+  };
+
+  for (let day = 1; day <= uptoDay; day++) {
+    const totals = dayTotals(day);
+    if (totals.kcal <= 0 && totals.p <= 0) continue;
+
+    const date = dateForDay(day);
+    const weekendKey = [0, 6].includes(date.getDay()) ? 'weekend' : 'weekday';
+    const sessionKey = sessionFor(date) === 'R' ? 'restDay' : 'trainingDay';
+    addNutritionDay(groups[weekendKey], totals);
+    addNutritionDay(groups[sessionKey], totals);
+  }
+
+  return {
+    weekend: finalizeNutritionGroup(groups.weekend),
+    weekday: finalizeNutritionGroup(groups.weekday),
+    trainingDay: finalizeNutritionGroup(groups.trainingDay),
+    restDay: finalizeNutritionGroup(groups.restDay)
+  };
+}
+
+function emptyNutritionGroup() {
+  return { days: 0, kcalSum: 0, proteinSum: 0 };
+}
+
+function addNutritionDay(group, totals) {
+  group.days++;
+  group.kcalSum += totals.kcal;
+  group.proteinSum += totals.p;
+}
+
+function finalizeNutritionGroup(group) {
+  return {
+    days: group.days,
+    avgKcal: group.days ? group.kcalSum / group.days : null,
+    avgProtein: group.days ? group.proteinSum / group.days : null
+  };
 }
 
 // Calorie-trend vs gewichtstrend (#15 / roadmap-doel 45). Pure, deterministische
@@ -278,7 +331,8 @@ function missedTrainingDays(start, end) {
   return missed;
 }
 
-function nutritionScoreForDay(day) {
+export function nutritionScoreForDay(day) {
+  if (!hasFoodLog(day)) return null;
   const totals = dayTotals(day);
   const goals = state.goals || {};
   const kcalScore = targetScore(totals.kcal, goals.kcal || 0, 0.12);
