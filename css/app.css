@@ -492,6 +492,18 @@ button{font-family:inherit;}
 .ti-spark-bar.cur{background:var(--amber);}
 .ti-spark-bar.over{background:var(--red);}
 .ti-spark-lbl{font-size:8px;font-weight:700;color:var(--text-4);white-space:nowrap;}
+/* voor → na lichaamsvergelijking (#35) */
+.bc-rows{display:flex;flex-direction:column;gap:9px;margin-top:11px;}
+.bc-row{display:grid;grid-template-columns:62px 1fr auto;align-items:center;gap:9px;}
+.bc-row-lbl{font-size:11px;font-weight:800;color:var(--text-3);text-transform:uppercase;letter-spacing:0.06em;}
+.bc-row-val{font-size:14px;font-weight:700;color:var(--text);letter-spacing:-0.01em;}
+.bc-row-val small{font-size:11px;font-weight:700;color:var(--text-3);margin-left:3px;}
+.bc-photos{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:11px;}
+.bc-photo{margin:0;display:flex;flex-direction:column;gap:6px;}
+.bc-photo img{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:var(--r-sm);background:var(--surface-2);}
+.bc-photo figcaption{font-size:10px;font-weight:800;color:var(--text-3);text-transform:uppercase;letter-spacing:0.06em;text-align:center;}
+.bc-photo.missing{aspect-ratio:auto;}
+.bc-photo-empty{aspect-ratio:3/4;display:flex;align-items:center;justify-content:center;text-align:center;padding:14px;font-size:11px;font-weight:700;color:var(--text-4);background:var(--surface-2);border:1px dashed var(--line);border-radius:var(--r-sm);line-height:1.4;}
 /* 90-dagen heatmap */
 .heatmap-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);padding:14px 15px;}
 .hm-controls{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:var(--surface-2);border-radius:var(--r-pill);padding:4px;margin-bottom:12px;}
