@@ -2,6 +2,21 @@
 
 Dit bestand definieert het formaat voor toekomstige releases. Vul geen fictieve releases in. Voeg alleen entries toe wanneer er werkelijk iets is gewijzigd en gedeployed of bewust als release is gemarkeerd.
 
+## 2026-06-15 - v1.7.0
+
+Calorie-trend vs gewichtstrend-kaart op Overzicht (#15 — roadmap-doel 45).
+
+### Added
+- **Calorieën vs gewichtstrend**-kaart in `Voortgang & tempo` (Overzicht): zet het 14-daagse caloriegemiddelde naast de EWMA-gewichtstrend met een regelgebaseerde, niet-causale verdict-tekst ("consistent met een cut" / "plateau ondanks lage inname" / "inname boven onderhoud" / "vlak — observeer nog ~1 week"). Confidence-badge bij dunne data (<3 gelogde dagen of <3 weegmomenten).
+- Nieuwe pure helper `calorieVsWeight(uptoDay, windowDays = 14)` in `js/dashboardMetrics.js`; read-only, hergebruikt `weightMetrics(state.weights)` en `dayTotals(d)`. Geen TDEE-claim, geen causale taal.
+
+### Operations
+- `CACHE_VERSION` `shred-v20` → `shred-v21` (shell-asset `js/dashboardMetrics.js` + `js/ui/overview.js` gewijzigd).
+
+### Verification
+- `node --check` op `js/dashboardMetrics.js`, `js/ui/overview.js` en `service-worker.js`: OK.
+- Logica-rondgang met mock-state: (a) dalend gewicht + 2100 kcal → "consistent met een cut"; (b) `plateauV2` + lage kcal → "Plateau ondanks lage inname"; (c) lege state → empty-state zonder `NaN`; (d) trend ≈ 0 → "observeer nog ~1 week".
+
 ## 2026-06-09 - v1.6.0
 
 M3-b: cardio duration/intensity logging als nieuw sync-type (#16, #17, #18).

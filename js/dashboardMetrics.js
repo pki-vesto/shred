@@ -183,6 +183,64 @@ export function macroWeeklySeries(uptoWeek = weekOf(todayNum())) {
   return out;
 }
 
+// Calorie-trend vs gewichtstrend (#15 / roadmap-doel 45). Pure, deterministische
+// helper die het 14-daags caloriegemiddelde naast de EWMA-gewichtstrend zet en
+// een niet-causale duiding teruggeeft. Geen TDEE-claim, geen "X veroorzaakt Y":
+// alleen "consistent met" / "ondanks" / "bij" — conform docs/14 § Analyseprincipes.
+export function calorieVsWeight(uptoDay = todayNum(), windowDays = 14) {
+  const wm = weightMetrics(state.weights);
+  const fromDay = Math.max(1, uptoDay - windowDays + 1);
+  let kcalSum = 0, loggedDays = 0;
+  for (let d = fromDay; d <= uptoDay; d++) {
+    const kcal = dayTotals(d).kcal;
+    if (kcal > 0) { kcalSum += kcal; loggedDays++; }
+  }
+  const weighIns = wm.consistency ? wm.consistency.logged : 0;
+
+  if (loggedDays === 0 || weighIns === 0) {
+    return { empty: true, reason: 'missing-data', loggedDays, weighIns };
+  }
+
+  const avgKcalRecent = Math.round(kcalSum / loggedDays);
+  const trend = wm.ewmaTrendPerWeek;
+  const ewmaTrendPerWeek = trend === null ? null : (Math.round(trend * 10) / 10) + 0;
+  const goalKcal = state.goals?.kcal || 0;
+  const lowIntake = goalKcal > 0 ? avgKcalRecent <= goalKcal : false;
+  const verdict = verdictFor({
+    ewmaTrendPerWeek,
+    avgKcalRecent,
+    plateauV2: wm.plateauV2,
+    lowIntake
+  });
+  const conf = confLevel(Math.min(loggedDays, weighIns), 2, 4);
+
+  return {
+    empty: false,
+    avgKcalRecent,
+    ewmaTrendPerWeek,
+    loggedDays,
+    weighIns,
+    plateauV2: wm.plateauV2,
+    conf,
+    verdict
+  };
+}
+
+function verdictFor({ ewmaTrendPerWeek, avgKcalRecent, plateauV2, lowIntake }) {
+  const absTrend = ewmaTrendPerWeek === null ? null : Math.abs(ewmaTrendPerWeek).toFixed(1).replace('.', ',');
+  const kcalLabel = `${avgKcalRecent} kcal`;
+  if (plateauV2 && lowIntake) {
+    return `Plateau ondanks lage inname (${kcalLabel}/d) — check logkwaliteit en vochtbalans.`;
+  }
+  if (ewmaTrendPerWeek !== null && ewmaTrendPerWeek <= -0.1) {
+    return `Trend daalt ${absTrend} kg/wk bij gem. ${kcalLabel}/d — consistent met een cut.`;
+  }
+  if (ewmaTrendPerWeek !== null && ewmaTrendPerWeek >= 0.1) {
+    return `Trend stijgt ${absTrend} kg/wk bij gem. ${kcalLabel}/d — inname boven onderhoud.`;
+  }
+  return `Trend ~vlak bij gem. ${kcalLabel}/d — observeer nog ~1 week.`;
+}
+
 // 90-dagen tempo: trainingscompletion vs verwacht én geprojecteerd gewicht op
 // dag 90 op basis van de EWMA-trend. Geen TDEE-aanname; conservatief.
 export function goalPace(day = todayNum()) {
