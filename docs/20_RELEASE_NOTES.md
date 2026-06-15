@@ -2,6 +2,21 @@
 
 Dit bestand definieert het formaat voor toekomstige releases. Vul geen fictieve releases in. Voeg alleen entries toe wanneer er werkelijk iets is gewijzigd en gedeployed of bewust als release is gemarkeerd.
 
+## 2026-06-15 - v1.8.0
+
+Favoriete oefening-swaps (#17 — roadmap-doel 13).
+
+### Added
+- Ster-toggle in de oefening-swap-sheet: favoriete varianten verschijnen bovenaan binnen hun knieveiligheidsgroep.
+- Nieuw gesynct meta-veld `favoriteExercises`, via hetzelfde meta-syncpad als `slotDefaults`.
+
+### Operations
+- `CACHE_VERSION` `shred-v21` → `shred-v22` (shell-assets `css/app.css`, `js/state.js`, `js/sync.js`, `js/exercises.js` en `js/ui/swap.js` gewijzigd).
+
+### Verification
+- `node --check` op `js/state.js`, `js/sync.js`, `js/ui/swap.js`, `js/exercises.js` en `service-worker.js`: OK.
+- Lokale logica-test: meta read/write round-trip bewaart favorieten; een favoriete knie-onvriendelijke oefening komt niet boven een knieveilige niet-favoriet.
+
 ## 2026-06-15 - v1.7.0
 
 Calorie-trend vs gewichtstrend-kaart op Overzicht (#15 — roadmap-doel 45).
@@ -242,4 +257,3 @@ Eerste formeel gelogde release. De staat daarvóór was niet geversioneerd; dit 
 - Health Core dual-write getest indien geraakt.
 - Backup/rollback impact benoemd.
 - Geen secrets in release notes.
-
