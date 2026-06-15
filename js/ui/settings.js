@@ -8,6 +8,7 @@ import { isVoiceEnabled, setVoiceEnabled, testMic } from './voice.js';
 import { isRecordingSupported, unsupportedReason } from '../voice/record.js';
 import { installSeed } from '../nutrition.js';
 import { getThemePref, setThemePref } from '../theme.js';
+import { buildBodyCsv, buildNutritionCsv, csvFilename } from '../export.js';
 
 const ICON_DATA_URL = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cg fill='%23303338'%3E%3Ccircle cx='18' cy='18' r='3'/%3E%3Ccircle cx='32' cy='18' r='3'/%3E%3Ccircle cx='46' cy='18' r='3'/%3E%3Ccircle cx='18' cy='32' r='3'/%3E%3Ccircle cx='46' cy='46' r='3'/%3E%3C/g%3E%3Cg fill='%23f2a73c'%3E%3Ccircle cx='46' cy='32' r='3'/%3E%3Ccircle cx='32' cy='32' r='3'/%3E%3Ccircle cx='32' cy='46' r='3'/%3E%3Ccircle cx='18' cy='46' r='3'/%3E%3C/g%3E%3C/svg%3E";
 
@@ -124,12 +125,34 @@ export function renderSettings() {
     URL.revokeObjectURL(url);
     toast('Export gestart', 'success');
   };
+  document.getElementById('exportNutritionBtn').onclick = () => {
+    const csv = buildNutritionCsv(state);
+    if (!csv) { toast('Geen voedingsdata om te exporteren', 'error'); return; }
+    downloadText(csv, csvFilename('voeding'), 'text/csv;charset=utf-8');
+    toast('Voeding-export gestart', 'success');
+  };
+  document.getElementById('exportBodyBtn').onclick = () => {
+    const csv = buildBodyCsv(state);
+    if (!csv) { toast('Geen lichaamsdata om te exporteren', 'error'); return; }
+    downloadText(csv, csvFilename('lichaam'), 'text/csv;charset=utf-8');
+    toast('Lichaam-export gestart', 'success');
+  };
   document.getElementById('resetBtn').onclick = async () => {
     if (!confirm('ALLES wissen? Dit kan niet ongedaan worden.')) return;
     localStorage.removeItem('shred_state_v2');
     await wipeAll();
     location.reload();
   };
+}
+
+function downloadText(text, filename, type) {
+  const blob = new Blob([text], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 function escapeAttr(s) {
