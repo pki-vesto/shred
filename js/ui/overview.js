@@ -1,7 +1,7 @@
 import { state, saveState } from '../state.js';
 import { SESSIONS, sessionFor } from '../sessions.js';
 import { TOTAL_DAYS, dateForDay, todayNum, dayIsComplete, isHardcodedDeload, weekOf, resolveSlots, shortDate } from '../helpers.js';
-import { dashboardKpis, weeklyReview, macroWeeklySeries, goalPace } from '../dashboardMetrics.js';
+import { dashboardKpis, weeklyReview, macroWeeklySeries, goalPace, calorieVsWeight } from '../dashboardMetrics.js';
 import { confBadge } from './components.js';
 import { weeklyVolume, kneeLoadForSession, weekPRSummary, weeklyVolumeSeries, prTimeline, PR_LABELS } from '../trainingMetrics.js';
 
@@ -224,8 +224,9 @@ function renderProgressIntel() {
   const pace = goalPace(today);
   const macro = macroWeeklySeries(week);
   const loggedWeeks = macro.filter(m => m.days > 0);
+  const cvw = calorieVsWeight(today);
 
-  if (!pace.expected && !loggedWeeks.length) { wrap.innerHTML = ''; return; }
+  if (!pace.expected && !loggedWeeks.length && cvw.empty) { wrap.innerHTML = ''; return; }
 
   // Goal-pace card.
   const pacePct = pace.trainingPct === null ? null : Math.round(pace.trainingPct * 100);
@@ -268,7 +269,31 @@ function renderProgressIntel() {
       </div>`;
   }
 
+  // Calorie-trend vs gewichtstrend (#15 / roadmap-doel 45): regelgebaseerde,
+  // niet-causale duiding op één regel, met confidence-badge.
+  let cvwCard = '';
+  if (cvw.empty) {
+    cvwCard = `
+      <div class="ti-card">
+        <div class="ti-k">Calorieën vs gewichtstrend</div>
+        <div class="ti-sub">Log voeding én gewicht voor deze vergelijking.</div>
+      </div>`;
+  } else {
+    const trendStr = cvw.ewmaTrendPerWeek === null
+      ? '—'
+      : `${cvw.ewmaTrendPerWeek >= 0 ? '+' : ''}${cvw.ewmaTrendPerWeek.toFixed(1).replace('.', ',')}`;
+    cvwCard = `
+      <div class="ti-card">
+        <div class="ti-card-top">
+          <div><div class="ti-k">Calorieën vs gewichtstrend ${confBadge(cvw.conf)}</div><div class="ti-v">${cvw.avgKcalRecent}<small> kcal/d</small></div></div>
+          <span class="ti-delta flat">${trendStr} kg/wk</span>
+        </div>
+        <div class="ti-sub">${cvw.verdict}</div>
+        <div class="ti-sub ti-muted">${cvw.loggedDays} gelogde dagen · ${cvw.weighIns} weegmomenten (14d).</div>
+      </div>`;
+  }
+
   wrap.innerHTML = `
     <div class="ti-head"><h3>Voortgang &amp; tempo</h3><span>dag ${today}</span></div>
-    ${paceCard}${macroCard}`;
+    ${paceCard}${macroCard}${cvwCard}`;
 }
