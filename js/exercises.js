@@ -212,9 +212,12 @@ export function equipmentFor(exo) {
   return '';
 }
 
-// Alle oefeningen in een categorie, knievriendelijk eerst, daarna op naam.
-export function variantsFor(category) {
+// Alle oefeningen in een categorie, knievriendelijk eerst, daarna favorieten,
+// daarna op naam. Favoriet overrulet knie-onvriendelijk dus nooit.
+export function variantsFor(category, favoriteExercises = {}) {
   return LIST
     .filter(e => e.category === category)
-    .sort((a, b) => (b.knee_safe - a.knee_safe) || a.name.localeCompare(b.name, 'nl'));
+    .sort((a, b) => (b.knee_safe - a.knee_safe)
+      || ((favoriteExercises[b.id] ? 1 : 0) - (favoriteExercises[a.id] ? 1 : 0))
+      || a.name.localeCompare(b.name, 'nl'));
 }
