@@ -2,8 +2,10 @@ import { state, saveState } from '../state.js';
 import { SESSIONS, sessionFor } from '../sessions.js';
 import { TOTAL_DAYS, dateForDay, todayNum, dayIsComplete, isHardcodedDeload, weekOf, resolveSlots, shortDate } from '../helpers.js';
 import { dashboardKpis, weeklyReview, macroWeeklySeries, goalPace, calorieVsWeight, nutritionScoreForDay, trainingHeatmapStatus, nutritionContextSplit, confLevel } from '../dashboardMetrics.js';
-import { confBadge } from './components.js';
+import { confBadge, toast } from './components.js';
 import { weeklyVolume, kneeLoadForSession, weekPRSummary, weeklyVolumeSeries, prTimeline, PR_LABELS } from '../trainingMetrics.js';
+import { buildReportPayload, isReportEmpty, phaseForDay, phaseRange, reportFilename, safeReportReplacer } from '../reportMetrics.js';
+import { downloadJSON } from './settings.js';
 
 export function renderOverview(switchTab) {
   let kracht = 0, cardio = 0;
@@ -22,6 +24,7 @@ export function renderOverview(switchTab) {
   }
   document.getElementById('sStreak').textContent = streak;
   renderDashboard();
+  wireReportExport();
   renderTrainingIntel();
   renderProgressIntel();
   renderHeatmaps(switchTab);
@@ -55,6 +58,25 @@ export function renderOverview(switchTab) {
       switchTab('today');
     };
   });
+}
+
+// Faserapport-export (#36/#172): bouwt het rapport-payload voor de huidige
+// fase en download als JSON via de gedeelde helper. Volledig client-side.
+function wireReportExport() {
+  const btn = document.getElementById('exportReportBtn');
+  if (!btn) return;
+  btn.onclick = () => {
+    const today = todayNum();
+    const { fromDay, toDay } = phaseRange(phaseForDay(today));
+    const upto = Math.min(toDay, today);
+    const payload = buildReportPayload(fromDay, upto);
+    if (isReportEmpty(payload)) {
+      toast('Geen rapportdata voor deze periode', 'error');
+      return;
+    }
+    downloadJSON(reportFilename(payload), payload, { replacer: safeReportReplacer });
+    toast('Rapport geëxporteerd', 'success');
+  };
 }
 
 function renderDashboard() {
