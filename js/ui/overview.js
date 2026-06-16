@@ -4,7 +4,7 @@ import { TOTAL_DAYS, dateForDay, todayNum, dayIsComplete, isHardcodedDeload, wee
 import { dashboardKpis, weeklyReview, macroWeeklySeries, goalPace, calorieVsWeight, nutritionScoreForDay, trainingHeatmapStatus, nutritionContextSplit, confLevel } from '../dashboardMetrics.js';
 import { confBadge, toast } from './components.js';
 import { weeklyVolume, kneeLoadForSession, weekPRSummary, weeklyVolumeSeries, prTimeline, PR_LABELS } from '../trainingMetrics.js';
-import { buildReportPayload, isReportEmpty, phaseForDay, phaseRange, reportFilename, safeReportReplacer } from '../reportMetrics.js';
+import { bodyComparison, buildReportPayload, isReportEmpty, phaseForDay, phaseRange, reportFilename, safeReportReplacer } from '../reportMetrics.js';
 import { downloadJSON } from './settings.js';
 
 export function renderOverview(switchTab) {
@@ -24,6 +24,7 @@ export function renderOverview(switchTab) {
   }
   document.getElementById('sStreak').textContent = streak;
   renderDashboard();
+  renderBodyComparison();
   wireReportExport();
   renderTrainingIntel();
   renderProgressIntel();
@@ -107,6 +108,103 @@ function renderDashboard() {
       `).join('')}
     </div>
     ${review.recommendation ? `<div class="review-rec"><span class="rr-ic">→</span><span>${review.recommendation}</span></div>` : ''}`;
+}
+
+// ---- Voor → Na lichaamsvergelijking (#35) ----------------------------------
+// Bundelt EWMA-trendgewicht, beschikbare metingen en het dichtstbijzijnde
+// foto-paar tot één read-only "voor → na" blok over dag 1 → vandaag. Pure
+// data komt uit `bodyComparison()`; deze functie doet alleen de render.
+
+function renderBodyComparison() {
+  const wrap = document.getElementById('bodyComparison');
+  if (!wrap) return;
+
+  const today = todayNum();
+  const cmp = bodyComparison(1, today, state);
+  const hasWeight = cmp.weight.from && cmp.weight.to;
+  const hasMeasurements = cmp.measurements.length > 0;
+  const hasPhotos = cmp.photos.from || cmp.photos.to;
+
+  if (!hasWeight && !hasMeasurements && !hasPhotos) {
+    wrap.innerHTML = `
+      <div class="ti-head"><h3>Voor → Na</h3><span>dag 1 → ${today}</span></div>
+      <div class="ti-empty">Log gewicht, metingen of foto's om een begin/eind-vergelijking op te bouwen.</div>`;
+    return;
+  }
+
+  wrap.innerHTML = `
+    <div class="ti-head"><h3>Voor → Na ${confBadge(cmp.confidence)}</h3><span>dag 1 → ${today}</span></div>
+    ${weightBlock(cmp.weight)}
+    ${measurementsBlock(cmp.measurements)}
+    ${photoBlock(cmp.photos)}`;
+}
+
+function weightBlock(weight) {
+  if (!weight.from || !weight.to) {
+    return `
+      <div class="ti-card">
+        <div class="ti-k">Trendgewicht</div>
+        <div class="ti-sub">Onvoldoende weeggegevens rond start of einde van het venster.</div>
+      </div>`;
+  }
+  const fromKg = weight.from.w.toFixed(1);
+  const toKg = weight.to.w.toFixed(1);
+  const delta = weight.deltaKg;
+  const tone = delta === null ? 'flat' : delta < -0.1 ? 'down' : delta > 0.1 ? 'up' : 'flat';
+  const sign = delta > 0 ? '+' : '';
+  const deltaStr = delta === null ? '—' : `${sign}${delta.toFixed(1).replace('.', ',')} kg`;
+  const rateStr = weight.kgPerWeek === null
+    ? ''
+    : ` · ${weight.kgPerWeek >= 0 ? '+' : ''}${weight.kgPerWeek.toFixed(1).replace('.', ',')} kg/wk`;
+  return `
+    <div class="ti-card">
+      <div class="ti-card-top">
+        <div>
+          <div class="ti-k">Trendgewicht (EWMA)</div>
+          <div class="ti-v">${fromKg} → ${toKg}<small> kg</small></div>
+        </div>
+        <span class="ti-delta ${tone}">${deltaStr}</span>
+      </div>
+      <div class="ti-sub">Start dag ${weight.from.day} · eind dag ${weight.to.day}${rateStr}</div>
+    </div>`;
+}
+
+function measurementsBlock(measurements) {
+  if (!measurements.length) return '';
+  const rows = measurements.map(m => {
+    const delta = m.deltaCm;
+    const tone = delta < -0.1 ? 'down' : delta > 0.1 ? 'up' : 'flat';
+    const sign = delta > 0 ? '+' : '';
+    return `
+      <div class="bc-row">
+        <span class="bc-row-lbl">${m.label}</span>
+        <span class="bc-row-val">${m.from.v.toFixed(1)} → ${m.to.v.toFixed(1)}<small> cm</small></span>
+        <span class="ti-delta ${tone}">${sign}${delta.toFixed(1).replace('.', ',')} cm</span>
+      </div>`;
+  }).join('');
+  return `
+    <div class="ti-card">
+      <div class="ti-k">Metingen</div>
+      <div class="bc-rows">${rows}</div>
+    </div>`;
+}
+
+function photoBlock(photos) {
+  const renderSide = (p, fallback) => {
+    if (p && p.dataUrl) {
+      return `<figure class="bc-photo"><img src="${p.dataUrl}" alt="Foto week ${p.wk}" loading="lazy" onerror="this.parentElement.classList.add('missing');this.remove();"><figcaption>Week ${p.wk}</figcaption></figure>`;
+    }
+    return `<figure class="bc-photo missing"><div class="bc-photo-empty">${fallback}</div></figure>`;
+  };
+  if (!photos.from && !photos.to) return '';
+  return `
+    <div class="ti-card">
+      <div class="ti-k">Foto's</div>
+      <div class="bc-photos">
+        ${renderSide(photos.from, 'Nog geen startfoto')}
+        ${renderSide(photos.to, 'Nog geen eindfoto')}
+      </div>
+    </div>`;
 }
 
 // ---- Trainingsintelligentie -------------------------------------------------
