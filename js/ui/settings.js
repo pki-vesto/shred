@@ -129,13 +129,7 @@ export function renderSettings() {
 
   // Data — export + reset
   document.getElementById('exportBtn').onclick = () => {
-    const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `shred-data-${new Date().toISOString().slice(0, 10)}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    downloadJSON(`shred-data-${new Date().toISOString().slice(0, 10)}.json`, state);
     toast('Export gestart', 'success');
   };
   document.getElementById('exportNutritionBtn').onclick = () => {
@@ -166,6 +160,14 @@ function downloadText(text, filename, type) {
   a.download = filename;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+// Gedeelde JSON-download-helper. Hergebruikt door de Settings state-dump én de
+// faserapport-export, zodat blob/object-URL-lifecycle op één plek leeft. Een
+// optionele replacer strip blobs/dataURLs voor defense-in-depth.
+export function downloadJSON(filename, payload, { replacer = null } = {}) {
+  const json = JSON.stringify(payload, replacer, 2);
+  downloadText(json, filename, 'application/json');
 }
 
 function escapeAttr(s) {
