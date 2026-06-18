@@ -2,6 +2,10 @@
 
 Dit bestand definieert het formaat voor toekomstige releases. Vul geen fictieve releases in. Voeg alleen entries toe wanneer er werkelijk iets is gewijzigd en gedeployed of bewust als release is gemarkeerd.
 
+## Unreleased
+
+- N2 Frontend metrics test runner: root `npm test` draait een `node --test` smoke-suite voor `bodyMetrics`, `trainingMetrics`, `dashboardMetrics` en `reportMetrics`.
+
 ## 2026-06-15 - v1.12.0
 
 Service-worker update-UX en sync-diagnostics (#19 — platformdoelen 182 en 183).

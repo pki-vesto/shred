@@ -2,7 +2,7 @@
 
 Levende status van Shred Tracker. Bijgewerkt bij elke milestone. Details staan in de genummerde docs; dit is het snelle overzicht.
 
-**Laatst bijgewerkt:** 2026-06-09 · **Release:** v1.6.0 · **SW cache:** `shred-v20` · **Backlog:** 56/200 klaar (zie [PRODUCT_BACKLOG.md](PRODUCT_BACKLOG.md)).
+**Laatst bijgewerkt:** 2026-06-18 · **Release:** v1.12.0 + Unreleased testupdate · **SW cache:** `shred-v26` · **Backlog:** 56/200 + N2 klaar (zie [PRODUCT_BACKLOG.md](PRODUCT_BACKLOG.md)).
 
 ## Live deployment
 - Frontend (`shred`, nginx) is **bind-mounted** (`./:/usr/share/nginx/html:ro`) → wijzigingen direct live; clients herladen bij SW-versiebump.
@@ -25,7 +25,7 @@ Levende status van Shred Tracker. Bijgewerkt bij elke milestone. Details staan i
 - v1.5.0: M3-a lichaamsmetingen (nieuw `measurements` sync-type, end-to-end + Core dual-write + tests).
 
 ## Verificatie-status
-- Geautomatiseerd: `api/test-core.mjs` (dual-write), `api/test-sync.mjs` (sync-contract), `api/check-auth-boundary.sh` (poortgrens), `node --check` + ad-hoc mock-harnesses voor frontend-logica.
+- Geautomatiseerd: `npm test` (frontend metrics), `api/test-core.mjs` (dual-write), `api/test-sync.mjs` (sync-contract), `api/check-auth-boundary.sh` (poortgrens), `node --check` + ad-hoc mock-harnesses voor overige frontend-logica.
 - **Openstaand**: handmatige browser/PWA-verificatie op iPhone/Mac van de recente UI (analytics-secties, confidence-badges, voice-UX, metingen, sync tussen devices). Logica + serve + api zijn wel geverifieerd.
 
 ## Bekende gaten / volgende prioriteiten
