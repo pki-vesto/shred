@@ -761,6 +761,7 @@ body.sheet-lock{overflow:hidden;}
 .lib-row .lib-actions button{background:var(--surface-3);border:1px solid var(--line);color:var(--text-2);width:32px;height:32px;border-radius:8px;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
 .lib-row .lib-actions button.on{color:var(--amber);}
 .lib-row .badge{font-size:10px;font-weight:700;color:var(--text-4);text-transform:uppercase;letter-spacing:0.05em;}
+.tpl-analytics{margin:0 0 10px;padding:9px 12px;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--surface-2);color:var(--text-3);font-size:12px;font-weight:700;}
 
 @media (prefers-reduced-motion: reduce){
   *{animation-duration:.001s !important;transition-duration:.001s !important;}

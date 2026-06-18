@@ -37,7 +37,14 @@ Huidige meal templates bewaren:
 - naam;
 - categorie;
 - lijst van productId + grams;
+- gebruiksteller (`useCount`) en laatst toegepast (`lastUsedAt`);
 - deleted tombstone.
+
+Wanneer een template wordt toegepast, wordt de gekozen templateversie gestempeld
+met gebruiksmetadata. `templateAnalytics(category?, limit?)` vat dit samen naar
+aantal templates, gebruikte templates, totaal aantal toepassingen en top
+templates. De templatebeheer-sheet toont deze compacte analytics zodat zichtbaar
+blijft welke herbruikbare maaltijden echt loggingtijd besparen.
 
 Toekomstige recepten kunnen berekend worden als samengestelde producten, maar alleen als:
 
@@ -139,4 +146,3 @@ Nutrition analyses moeten antwoorden:
 - Welke producten/templates maken compliance makkelijker?
 
 Zie [14_ANALYTICS_AND_DASHBOARDS.md](14_ANALYTICS_AND_DASHBOARDS.md).
-

@@ -9,7 +9,8 @@ import {
   normalizeDay, dayTotals, categoryKcal, macrosFor,
   visibleProducts, getProduct, toggleFavorite, createProduct, updateProduct,
   removeProduct, addLogItem, updateLogItem, removeLogItem,
-  visibleTemplates, saveTemplate, applyTemplate, deleteTemplate
+  visibleTemplates, saveTemplate, applyTemplate, deleteTemplate,
+  templateAnalytics
 } from '../nutrition.js';
 
 // Welke maaltijd-secties dichtgeklapt zijn (per categorie-key).
@@ -598,14 +599,16 @@ export function openTemplatesManager() {
   openSheet();
   const templates = visibleTemplates();
   const labelOf = (k) => MEAL_CATEGORIES.find(c => c.key === k)?.label || k;
+  const analytics = templateAnalytics();
   sheetBody().innerHTML = `
     <div class="sheet-grip"></div>
     <div class="sheet-head"><h3>Templates</h3><button class="sheet-close" id="sheetClose">✕</button></div>
+    ${templates.length ? `<div class="tpl-analytics">${analytics.usedTemplates}/${analytics.totalTemplates} gebruikt · ${analytics.totalUses}× toegepast</div>` : ''}
     <div class="sheet-list">${templates.length ? templates.map(t => `
       <div class="lib-row" data-tid="${t.id}">
         <div class="food-info">
           <div class="food-name">${escapeHtml(t.name)}</div>
-          <div class="food-macros">${labelOf(t.category)} · ${t.items.length} producten</div>
+          <div class="food-macros">${labelOf(t.category)} · ${t.items.length} producten${templateUsageText(t)}</div>
         </div>
         <div class="lib-actions"><button data-deltpl="${t.id}" aria-label="Verwijder">✕</button></div>
       </div>`).join('') : '<div class="sheet-empty">Nog geen templates. Maak ze via het ⋯-menu bij een maaltijd.</div>'}</div>`;
@@ -777,6 +780,12 @@ function fmtGrams(product, grams) {
     }
   }
   return `${Math.round(grams)}g`;
+}
+
+function templateUsageText(template) {
+  const count = Number(template?.useCount) || 0;
+  if (!count) return '';
+  return ` · ${count}× gebruikt`;
 }
 
 function round1(x) {

@@ -193,6 +193,8 @@ export function saveTemplate(name, category, items) {
     name: name.trim(),
     category,
     items: items.map(it => ({ productId: it.productId, grams: it.grams })),
+    useCount: 0,
+    lastUsedAt: 0,
     deleted: false,
     createdAt: now,
     updatedAt: now
@@ -220,7 +222,38 @@ export function applyTemplate(dayN, cat, templateId) {
     addLogItem(dayN, cat, it.productId, it.grams);
     n++;
   }
+  if (n) {
+    t.useCount = (Number(t.useCount) || 0) + 1;
+    t.lastUsedAt = Date.now();
+    t.updatedAt = t.lastUsedAt;
+    mutate('template', t.id);
+  }
   return n;
+}
+
+export function templateAnalytics(category = null, limit = 5) {
+  const templates = visibleTemplates(category);
+  const used = templates.filter(t => Number(t.useCount) > 0);
+  const top = used
+    .slice()
+    .sort((a, b) =>
+      (Number(b.useCount) || 0) - (Number(a.useCount) || 0)
+      || (Number(b.lastUsedAt) || 0) - (Number(a.lastUsedAt) || 0)
+      || a.name.localeCompare(b.name, 'nl'))
+    .slice(0, limit)
+    .map(t => ({
+      id: t.id,
+      name: t.name,
+      category: t.category,
+      useCount: Number(t.useCount) || 0,
+      lastUsedAt: Number(t.lastUsedAt) || 0
+    }));
+  return {
+    totalTemplates: templates.length,
+    usedTemplates: used.length,
+    totalUses: used.reduce((sum, t) => sum + (Number(t.useCount) || 0), 0),
+    top
+  };
 }
 
 // ---- Seed + migratie -----------------------------------------------------
