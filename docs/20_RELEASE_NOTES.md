@@ -2,6 +2,27 @@
 
 Dit bestand definieert het formaat voor toekomstige releases. Vul geen fictieve releases in. Voeg alleen entries toe wanneer er werkelijk iets is gewijzigd en gedeployed of bewust als release is gemarkeerd.
 
+## Unreleased
+
+Calorie cycling targets (#59 — roadmap-doel 37).
+
+### Added
+- Nieuwe pure helper `calorieCyclingTargets(goals, delta)` voor training/rust kcal- en macrotargets.
+- Overzicht toont read-only calorie-cycling guidance in `Voortgang & tempo`.
+- Cycling houdt eiwit stabiel en bewaart het 7-daags gemiddelde rond het basisdoel.
+- Repeatable Node-test `tests/calorieCyclingTargets.test.mjs`.
+
+### Operations
+- `CACHE_VERSION` `shred-v28` → `shred-v29` (`js/dashboardMetrics.js`, `js/ui/overview.js` en `service-worker.js` gewijzigd).
+
+### Verification
+- `node --test tests/calorieCyclingTargets.test.mjs`
+- `node --check js/dashboardMetrics.js`
+- `node --check js/ui/overview.js`
+- `node --check tests/calorieCyclingTargets.test.mjs`
+- `node --check service-worker.js`
+- `git diff --check`
+
 ## 2026-06-15 - v1.12.0
 
 Service-worker update-UX en sync-diagnostics (#19 — platformdoelen 182 en 183).
