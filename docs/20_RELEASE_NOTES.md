@@ -2,6 +2,27 @@
 
 Dit bestand definieert het formaat voor toekomstige releases. Vul geen fictieve releases in. Voeg alleen entries toe wanneer er werkelijk iets is gewijzigd en gedeployed of bewust als release is gemarkeerd.
 
+## Unreleased
+
+Macro data quality score (#57 — roadmap-doel 36).
+
+### Added
+- Nieuwe pure helper `productMacroQuality(product)` met score, tier, label en redenen.
+- Productrijen tonen compacte macrokwaliteit: `Sterk`, `Indicatief` of `Laag`.
+- Score beloont complete plausibele macrodata en bronvertrouwen, en markeert ontbrekende/onwaarschijnlijke macro's.
+- Repeatable Node-test `tests/productMacroQuality.test.mjs`.
+
+### Operations
+- `CACHE_VERSION` `shred-v28` → `shred-v29` (`css/app.css`, `js/nutrition.js`, `js/ui/food.js` en `service-worker.js` gewijzigd).
+
+### Verification
+- `node --test tests/productMacroQuality.test.mjs`
+- `node --check js/nutrition.js`
+- `node --check js/ui/food.js`
+- `node --check tests/productMacroQuality.test.mjs`
+- `node --check service-worker.js`
+- `git diff --check`
+
 ## 2026-06-15 - v1.12.0
 
 Service-worker update-UX en sync-diagnostics (#19 — platformdoelen 182 en 183).

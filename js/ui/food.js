@@ -9,7 +9,8 @@ import {
   normalizeDay, dayTotals, categoryKcal, macrosFor,
   visibleProducts, getProduct, toggleFavorite, createProduct, updateProduct,
   removeProduct, addLogItem, updateLogItem, removeLogItem,
-  visibleTemplates, saveTemplate, applyTemplate, deleteTemplate
+  visibleTemplates, saveTemplate, applyTemplate, deleteTemplate,
+  productMacroQuality
 } from '../nutrition.js';
 
 // Welke maaltijd-secties dichtgeklapt zijn (per categorie-key).
@@ -240,7 +241,7 @@ function renderAddList(dayN, cat, prefill = null) {
       <button class="fav-star ${p.isFavorite ? 'on' : ''}" data-fav="${p.id}" aria-label="Favoriet">★</button>
       <div class="food-info">
         <div class="food-name">${escapeHtml(p.name)}</div>
-        <div class="food-macros">${Math.round(p.kcalPer100g)} kcal · <b>P${round1(p.pPer100g)}</b> C${round1(p.cPer100g)} F${round1(p.fPer100g)} <span class="per">/100g</span></div>
+        <div class="food-macros">${Math.round(p.kcalPer100g)} kcal · <b>P${round1(p.pPer100g)}</b> C${round1(p.cPer100g)} F${round1(p.fPer100g)} <span class="per">/100g</span> ${qualityBadge(p)}</div>
       </div>
       <span class="prod-add">+</span>
     </div>`).join('');
@@ -507,7 +508,7 @@ function renderLibList() {
     <div class="lib-row" data-id="${p.id}">
       <div class="food-info">
         <div class="food-name">${escapeHtml(p.name)} ${p.seed ? '<span class="badge">seed</span>' : ''}</div>
-        <div class="food-macros">${Math.round(p.kcalPer100g)} kcal · P${round1(p.pPer100g)} C${round1(p.cPer100g)} F${round1(p.fPer100g)} /100g</div>
+        <div class="food-macros">${Math.round(p.kcalPer100g)} kcal · P${round1(p.pPer100g)} C${round1(p.cPer100g)} F${round1(p.fPer100g)} /100g ${qualityBadge(p)}</div>
       </div>
       <div class="lib-actions">
         <button class="fav ${p.isFavorite ? 'on' : ''}" data-fav="${p.id}" aria-label="Favoriet">★</button>
@@ -766,6 +767,11 @@ function matchRank(name, q) {
 }
 
 // ---- Helpers --------------------------------------------------------------
+
+function qualityBadge(product) {
+  const q = productMacroQuality(product);
+  return `<span class="quality ${q.tier}" title="${escapeAttr(q.reasons.join(', '))}">${q.label}</span>`;
+}
 
 function fmtGrams(product, grams) {
   if (product?.unitName && product.unitGrams) {

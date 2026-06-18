@@ -101,6 +101,51 @@ export function getProduct(id) {
   return state.products[id] || null;
 }
 
+export function productMacroQuality(product) {
+  if (!product) return { score: 0, tier: 'low', label: 'Onbekend', reasons: ['product ontbreekt'] };
+  const kcal = Number(product.kcalPer100g) || 0;
+  const p = Number(product.pPer100g) || 0;
+  const c = Number(product.cPer100g) || 0;
+  const f = Number(product.fPer100g) || 0;
+  const reasons = [];
+  let score = 50;
+
+  if (product.seed) { score += 25; reasons.push('seed'); }
+  else if (product.source === 'llm') { score += 10; reasons.push('AI-schatting'); }
+  else if (product.fromLegacy) { score -= 15; reasons.push('legacy'); }
+  else { score += 18; reasons.push('handmatig'); }
+
+  const macroSum = p + c + f;
+  if (kcal <= 0 || macroSum <= 0) {
+    score -= 45;
+    reasons.push('macro ontbreekt');
+  } else {
+    score += 12;
+  }
+
+  if (p < 0 || c < 0 || f < 0 || kcal < 0 || p > 100 || c > 100 || f > 100 || macroSum > 115 || kcal > 950) {
+    score -= 35;
+    reasons.push('waarde onwaarschijnlijk');
+  }
+
+  const macroKcal = p * 4 + c * 4 + f * 9;
+  if (kcal > 0 && macroKcal > 0) {
+    const diff = Math.abs(kcal - macroKcal) / Math.max(kcal, macroKcal);
+    if (diff <= 0.25) {
+      score += 12;
+      reasons.push('macro/kcal consistent');
+    } else {
+      score -= 18;
+      reasons.push('macro/kcal wijkt af');
+    }
+  }
+
+  score = Math.max(0, Math.min(100, Math.round(score)));
+  const tier = score >= 85 ? 'high' : score >= 55 ? 'medium' : 'low';
+  const label = tier === 'high' ? 'Sterk' : tier === 'medium' ? 'Indicatief' : 'Laag';
+  return { score, tier, label, reasons };
+}
+
 // ---- Macro's -------------------------------------------------------------
 
 export function macrosFor(product, grams) {
