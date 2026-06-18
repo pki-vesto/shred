@@ -2,6 +2,24 @@
 
 Dit bestand definieert het formaat voor toekomstige releases. Vul geen fictieve releases in. Voeg alleen entries toe wanneer er werkelijk iets is gewijzigd en gedeployed of bewust als release is gemarkeerd.
 
+## Unreleased
+
+Missed-session recovery advies (#45 — roadmap-doel 19).
+
+### Added
+- Deterministisch gemiste-krachtsessieadvies in het weekrapport: niet inhalen na één gemiste sessie, conservatief hervatten bij recente missers en volume verlagen wanneer meerdere krachtsessies zijn gemist.
+- `missedSessionRecoveryAdvice(day, lookbackDays)` als testbare helper in `js/dashboardMetrics.js`.
+- Repeatable Node-test `tests/missedSessionAdvice.test.mjs`.
+
+### Operations
+- `CACHE_VERSION` `shred-v28` → `shred-v29` (`js/dashboardMetrics.js` gewijzigd).
+
+### Verification
+- `node --test tests/missedSessionAdvice.test.mjs`
+- `node --check js/dashboardMetrics.js`
+- `node --check tests/missedSessionAdvice.test.mjs`
+- `git diff --check`
+
 ## 2026-06-15 - v1.12.0
 
 Service-worker update-UX en sync-diagnostics (#19 — platformdoelen 182 en 183).

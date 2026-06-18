@@ -196,3 +196,19 @@ Toekomstig deloadmodel gebruikt:
 
 Zie [09_RECOVERY_ENGINE.md](09_RECOVERY_ENGINE.md) en [16_FITNESS_INTELLIGENCE_MODEL.md](16_FITNESS_INTELLIGENCE_MODEL.md).
 
+## Gemiste Sessies
+
+Gemiste krachtsessies worden deterministisch afgeleid uit de geplande K-dagen
+voor vandaag die nog niet volledig zijn afgevinkt. `missedSessionRecoveryAdvice`
+gebruikt een korte terugkijkperiode en geeft hersteladvies zonder AI:
+
+- één gemiste sessie gisteren: niet inhalen, hervat de eerstvolgende
+  krachtsessie conservatief met 1 RIR extra op de hoofdlift;
+- één gemiste sessie van 2-3 dagen oud: volg de planning en voeg hoogstens één
+  back-off set toe als de hoofdsets fris voelen;
+- meerdere gemiste sessies: ritme gaat boven volume, stapel geen inhaalsessies
+  en verlaag de eerstvolgende sessie met ongeveer 2 sets per grote lift;
+- oudere gemiste sessie: laten liggen en weekritme beschermen.
+
+Het advies verschijnt in het weekrapport op Overzicht en heeft voorrang op de
+generieke weekaanbeveling, zodat herstel na gemiste sessies concreet blijft.

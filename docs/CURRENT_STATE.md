@@ -2,7 +2,7 @@
 
 Levende status van Shred Tracker. Bijgewerkt bij elke milestone. Details staan in de genummerde docs; dit is het snelle overzicht.
 
-**Laatst bijgewerkt:** 2026-06-09 · **Release:** v1.6.0 · **SW cache:** `shred-v20` · **Backlog:** 56/200 klaar (zie [PRODUCT_BACKLOG.md](PRODUCT_BACKLOG.md)).
+**Laatst bijgewerkt:** 2026-06-18 · **Release:** v1.12.0 + unreleased missed-session advies · **SW cache:** `shred-v29` · **Backlog:** 57/200 klaar (zie [PRODUCT_BACKLOG.md](PRODUCT_BACKLOG.md)).
 
 ## Live deployment
 - Frontend (`shred`, nginx) is **bind-mounted** (`./:/usr/share/nginx/html:ro`) → wijzigingen direct live; clients herladen bij SW-versiebump.
@@ -13,7 +13,7 @@ Levende status van Shred Tracker. Bijgewerkt bij elke milestone. Details staan i
 - 90-dagen programma, set/RIR-logging, PR-detectie, swaps met knieveiligheid + equipment-chips.
 - Trainingsintelligentie (Overzicht): weekvolume + per groep + WoW-delta, volume-trend, PR-tijdlijn, kniebelasting + historie.
 - Voortgang & tempo: goal-pace (dag-90 projectie) + macro-trend.
-- Weekrapport met confidence per item + één aanbeveling; KPI's met confidence-badges.
+- Weekrapport met confidence per item + één aanbeveling; KPI's met confidence-badges; gemiste krachtsessies krijgen deterministisch hersteladvies.
 - Voeding: productbibliotheek, gerankte zoek, templates, AI macro-lookup, voice-logging met confidence-pills.
 - Lichaam: gewicht + EWMA-trendgewicht (grafiek), plateau v2, consistentie, forecast, foto's, **lichaamsmetingen** (taille/heup/borst/arm/dij).
 - Training: cardio-logging (duur/RPE/HR/intervallen) met zone-2 hartslagcontext (optionele max-HR in doelen).
@@ -21,8 +21,8 @@ Levende status van Shred Tracker. Bijgewerkt bij elke milestone. Details staan i
 - Health Core Fase A dual-write (bodyweight, nutrition aggregates, session volume, body.* metingen, cardio-minuten); status via `GET /api/health/core`.
 
 ## In uitvoering / net af
-- v1.6.0: M3-b cardio-logging (nieuw `cardio` sync-type + zone-2 context + Core dual-write `fitness.cardio_minutes` + tests).
-- v1.5.0: M3-a lichaamsmetingen (nieuw `measurements` sync-type, end-to-end + Core dual-write + tests).
+- Unreleased: missed-session recovery advies in het weekrapport (#45), met repeatable frontend-logictest.
+- v1.12.0: service-worker update-UX en sync-diagnostics.
 
 ## Verificatie-status
 - Geautomatiseerd: `api/test-core.mjs` (dual-write), `api/test-sync.mjs` (sync-contract), `api/check-auth-boundary.sh` (poortgrens), `node --check` + ad-hoc mock-harnesses voor frontend-logica.

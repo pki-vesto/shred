@@ -1,5 +1,5 @@
 import { state } from './state.js';
-import { dateForDay, dayIsComplete, todayNum, weekOf } from './helpers.js';
+import { TOTAL_DAYS, dateForDay, dayIsComplete, todayNum, weekOf } from './helpers.js';
 import { sessionFor } from './sessions.js';
 import { dayTotals } from './nutrition.js';
 import { weightMetrics } from './bodyMetrics.js';
@@ -34,6 +34,7 @@ export function weeklyMetrics(day = todayNum()) {
     : null;
   const weights = weightMetrics(state.weights);
   const missedTraining = missedTrainingDays(range.start, range.end);
+  const missedAdvice = missedSessionRecoveryAdvice(day);
 
   return {
     ...range,
@@ -47,6 +48,7 @@ export function weeklyMetrics(day = todayNum()) {
     avgProtein,
     weighIns: weights.data.length,
     missedTraining,
+    missedAdvice,
     weight: weights
   };
 }
@@ -131,7 +133,8 @@ export function weeklyReview(day = todayNum()) {
   }
   if (week.missedTraining.length) {
     const list = week.missedTraining.slice(-3).map(d => `dag ${d}`).join(', ');
-    items.push({ tone: 'warn', confidence: 'high', title: 'Gemiste training', text: `${list} niet voltooid. Houd de volgende sessie kort, maar sla de gewoonte niet over.` });
+    const advice = week.missedAdvice?.text || 'Houd de volgende sessie kort, maar sla de gewoonte niet over.';
+    items.push({ tone: 'warn', confidence: 'high', title: 'Gemiste training', text: `${list} niet voltooid. ${advice}` });
   }
 
   // Lichaam — op EWMA-trendgewicht (#49 body-deel van het rapport)
@@ -166,6 +169,7 @@ export function weeklyReview(day = todayNum()) {
 
 function buildRecommendation(week) {
   const w = week.weight;
+  if (week.missedAdvice) return week.missedAdvice.recommendation;
   if (week.daysElapsed >= 3 && week.completionPct < 0.6) return 'Focus deze week op consistentie: plan je eerstvolgende sessie nu in en houd hem kort.';
   if (week.avgProtein !== null && state.goals?.p && week.avgProtein < 0.8 * state.goals.p) return `Til je eiwit naar ~${state.goals.p} g/dag — voeg een eiwitbron toe aan je twee grootste maaltijden.`;
   if (w.plateauV2) return 'Plateau: trek de weekend-inname strakker of verlaag kcal licht (~100-150) en hermeet over 10 dagen.';
@@ -329,6 +333,58 @@ function missedTrainingDays(start, end) {
     if (!dayIsComplete(day)) missed.push(day);
   }
   return missed;
+}
+
+export function missedSessionRecoveryAdvice(day = todayNum(), lookbackDays = 14) {
+  const today = Math.max(1, Math.min(TOTAL_DAYS, Number(day) || todayNum()));
+  const from = Math.max(1, today - lookbackDays);
+  const missed = [];
+  for (let d = from; d < today; d++) {
+    const code = sessionFor(dateForDay(d));
+    if (!code.startsWith('K')) continue;
+    if (!dayIsComplete(d)) missed.push({ day: d, code });
+  }
+  if (!missed.length) return null;
+
+  const latest = missed[missed.length - 1];
+  const age = today - latest.day;
+  const multi = missed.length >= 2;
+  const label = latest.code === 'K1' ? 'push' : latest.code === 'K3' ? 'pull' : 'benen/calisthenics';
+
+  if (multi) {
+    return {
+      missed,
+      latest,
+      severity: 'high',
+      text: `${missed.length} krachtsessies gemist in ${lookbackDays} dagen. Stapel geen inhaalsessies; pak de eerstvolgende geplande krachttraining met 2 sets minder per grote lift.`,
+      recommendation: 'Ritme eerst: hervat met de eerstvolgende geplande krachtsessie, verlaag volume vandaag en haal geen gemiste sessies in.'
+    };
+  }
+  if (age <= 1) {
+    return {
+      missed,
+      latest,
+      severity: 'medium',
+      text: `Gisteren viel ${label} weg. Schuif door naar de eerstvolgende krachttraining en houd de eerste oefening 1 RIR ruimer.`,
+      recommendation: 'Niet inhalen: hervat de eerstvolgende krachtsessie normaal, maar start conservatief met 1 RIR extra op de hoofdlift.'
+    };
+  }
+  if (age <= 3) {
+    return {
+      missed,
+      latest,
+      severity: 'medium',
+      text: `${label} is ${age} dagen geleden gemist. Hervat volgens planning; voeg alleen volume toe als je na de hoofdsets fris bent.`,
+      recommendation: 'Hervat volgens planning en gebruik optioneel één extra back-off set, niet een volledige inhaalsessie.'
+    };
+  }
+  return {
+    missed,
+    latest,
+    severity: 'low',
+    text: `${label} is ouder dan 3 dagen. Laat die sessie liggen en bescherm je weekritme.`,
+    recommendation: 'Laat de oude gemiste sessie liggen; consistentie deze week is belangrijker dan volume terughalen.'
+  };
 }
 
 export function nutritionScoreForDay(day) {

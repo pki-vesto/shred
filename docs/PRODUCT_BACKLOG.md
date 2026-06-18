@@ -2,9 +2,9 @@
 
 Trackbare status van de 200 doelen uit [18_PRODUCT_ROADMAP.md](18_PRODUCT_ROADMAP.md). De roadmap is de canonieke *lijst*; dit bestand houdt de *status* bij. `[x]` = klaar (geïmplementeerd + geverifieerd), `[ ]` = open. Markeer hier af zodra werk gemerged/gedeployed is en voeg nieuw ontdekt werk onderaan toe.
 
-**Stand: 56 klaar · 144 open** (laatst bijgewerkt 2026-06-09, t/m v1.6.0).
+**Stand: 57 klaar · 143 open** (laatst bijgewerkt 2026-06-18, t/m v1.12.0 + unreleased missed-session advies).
 
-## Training (1-25) — 16/25
+## Training (1-25) — 17/25
 - [x] 1 Behoud 90-dagen programma
 - [x] 2 Documenteer programma-entiteit
 - [x] 3 Stabiele exercise IDs
@@ -23,7 +23,7 @@ Trackbare status van de 200 doelen uit [18_PRODUCT_ROADMAP.md](18_PRODUCT_ROADMA
 - [x] 16 Cardio duration/intensity logging
 - [x] 17 Zone 2 hartslagcontext
 - [x] 18 Interval workout completion details
-- [ ] 19 Missed-session recovery advies
+- [x] 19 Missed-session recovery advies
 - [ ] 20 Training density
 - [ ] 21 Session readiness modifier
 - [ ] 22 Exercise progression recommendations
