@@ -2,7 +2,7 @@
 
 Levende status van Shred Tracker. Bijgewerkt bij elke milestone. Details staan in de genummerde docs; dit is het snelle overzicht.
 
-**Laatst bijgewerkt:** 2026-06-09 · **Release:** v1.6.0 · **SW cache:** `shred-v20` · **Backlog:** 56/200 klaar (zie [PRODUCT_BACKLOG.md](PRODUCT_BACKLOG.md)).
+**Laatst bijgewerkt:** 2026-06-18 · **Release:** v1.12.0 · **SW cache:** `shred-v28` · **Backlog:** 57/200 klaar (zie [PRODUCT_BACKLOG.md](PRODUCT_BACKLOG.md)).
 
 ## Live deployment
 - Frontend (`shred`, nginx) is **bind-mounted** (`./:/usr/share/nginx/html:ro`) → wijzigingen direct live; clients herladen bij SW-versiebump.
@@ -10,7 +10,7 @@ Levende status van Shred Tracker. Bijgewerkt bij elke milestone. Details staan i
 - Bereikbaar via Tailscale Serve op `https://shred.tail9d0c71.ts.net`; intern via Caddy (:80) en nginx-fallback (:8088). API/Whisper hebben geen host-poort.
 
 ## Geïmplementeerd (hoofdlijnen)
-- 90-dagen programma, set/RIR-logging, PR-detectie, swaps met knieveiligheid + equipment-chips.
+- 90-dagen programma, set/RIR-logging, PR-detectie, swaps met knieveiligheid + equipment-chips + favoriete oefening-swaps.
 - Trainingsintelligentie (Overzicht): weekvolume + per groep + WoW-delta, volume-trend, PR-tijdlijn, kniebelasting + historie.
 - Voortgang & tempo: goal-pace (dag-90 projectie) + macro-trend.
 - Weekrapport met confidence per item + één aanbeveling; KPI's met confidence-badges.

@@ -25,7 +25,7 @@ Huidige geïmplementeerde hoofdfeatures:
 
 - 90-dagen programma met dagnummering vanaf `meta.startDate`.
 - Vandaag-tab met kracht/cardio/rustdag workflows.
-- Trainingsslots met default oefeningen en swaps per dag of per slot-default, met afgeleide equipment-chip per oefening.
+- Trainingsslots met default oefeningen, favoriete swap-varianten en swaps per dag of per slot-default, met afgeleide equipment-chip per oefening.
 - Oefeninghistorie per concrete `exerciseId`.
 - Setlogging met gewicht, reps, RIR-select en PR-detectie.
 - Dagcompletion en notities.
@@ -97,4 +97,3 @@ Huidige prioriteitslijn:
 - UX en dashboards: [13_UI_UX_GUIDELINES.md](13_UI_UX_GUIDELINES.md), [14_ANALYTICS_AND_DASHBOARDS.md](14_ANALYTICS_AND_DASHBOARDS.md).
 - Intelligence: [16_FITNESS_INTELLIGENCE_MODEL.md](16_FITNESS_INTELLIGENCE_MODEL.md), [17_DIGITAL_FITNESS_TWIN.md](17_DIGITAL_FITNESS_TWIN.md).
 - Development: [19_CLAUDE_CODE_GUIDELINES.md](19_CLAUDE_CODE_GUIDELINES.md), [20_RELEASE_NOTES.md](20_RELEASE_NOTES.md).
-
