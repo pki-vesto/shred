@@ -9,7 +9,8 @@ import {
   normalizeDay, dayTotals, categoryKcal, macrosFor,
   visibleProducts, getProduct, toggleFavorite, createProduct, updateProduct,
   removeProduct, addLogItem, updateLogItem, removeLogItem,
-  visibleTemplates, saveTemplate, applyTemplate, deleteTemplate
+  visibleTemplates, saveTemplate, applyTemplate, deleteTemplate,
+  productMatchRank, productMetaParts
 } from '../nutrition.js';
 
 // Welke maaltijd-secties dichtgeklapt zijn (per categorie-key).
@@ -209,7 +210,7 @@ function renderAddList(dayN, cat, prefill = null) {
     // deelstring), daarbinnen op gebruik (vaak/recent) en dan naam. Zo komt het
     // product dat Peter waarschijnlijk bedoelt bovenaan i.p.v. puur alfabetisch.
     products = products
-      .map(p => ({ p, rank: matchRank(p.name, q) }))
+      .map(p => ({ p, rank: productMatchRank(p, q) }))
       .filter(x => x.rank >= 0)
       .sort((a, b) =>
         a.rank - b.rank
@@ -241,6 +242,7 @@ function renderAddList(dayN, cat, prefill = null) {
       <div class="food-info">
         <div class="food-name">${escapeHtml(p.name)}</div>
         <div class="food-macros">${Math.round(p.kcalPer100g)} kcal · <b>P${round1(p.pPer100g)}</b> C${round1(p.cPer100g)} F${round1(p.fPer100g)} <span class="per">/100g</span></div>
+        ${productMetaHtml(p)}
       </div>
       <span class="prod-add">+</span>
     </div>`).join('');
@@ -280,6 +282,11 @@ function renderNewForm(list, dayN, cat, prefill = {}) {
         <input type="text" id="npUnitName" placeholder="naam eenheid">
         <input type="number" inputmode="decimal" id="npUnitGrams" placeholder="gram per stuk">
       </div>
+      <label class="opt">Optionele labelgegevens — handmatig overnemen van verpakking</label>
+      <div class="grid2">
+        <input type="text" id="npBarcode" inputmode="numeric" placeholder="barcode">
+        <input type="text" id="npLabelText" placeholder="label/bron">
+      </div>
       <button class="btn-primary" id="npSave">Aanmaken & toevoegen</button>
     </div>`;
   if (!prefill.name) document.getElementById('npName').focus();
@@ -308,7 +315,9 @@ function renderNewForm(list, dayN, cat, prefill = {}) {
       cPer100g: +document.getElementById('npC').value || 0,
       fPer100g: +document.getElementById('npF').value || 0,
       unitName: unitName && unitGrams ? unitName : null,
-      unitGrams: unitName && unitGrams ? unitGrams : null
+      unitGrams: unitName && unitGrams ? unitGrams : null,
+      barcode: document.getElementById('npBarcode').value,
+      labelText: document.getElementById('npLabelText').value
     });
     openPortion(dayN, cat, p, {});
   };
@@ -498,7 +507,7 @@ function renderLibList() {
   if (!list) return;
   const q = searchQuery.trim().toLowerCase();
   const products = visibleProducts()
-    .filter(p => !q || p.name.toLowerCase().includes(q))
+    .filter(p => !q || productMatchRank(p, q) >= 0)
     .sort((a, b) => a.name.localeCompare(b.name, 'nl'));
 
   if (!products.length) { list.innerHTML = `<div class="sheet-empty">Geen producten.</div>`; return; }
@@ -508,6 +517,7 @@ function renderLibList() {
       <div class="food-info">
         <div class="food-name">${escapeHtml(p.name)} ${p.seed ? '<span class="badge">seed</span>' : ''}</div>
         <div class="food-macros">${Math.round(p.kcalPer100g)} kcal · P${round1(p.pPer100g)} C${round1(p.cPer100g)} F${round1(p.fPer100g)} /100g</div>
+        ${productMetaHtml(p)}
       </div>
       <div class="lib-actions">
         <button class="fav ${p.isFavorite ? 'on' : ''}" data-fav="${p.id}" aria-label="Favoriet">★</button>
@@ -555,6 +565,11 @@ function openProductEditor(product, prefill = null) {
         <input type="text" id="epUnitName" value="${escapeAttr(p.unitName || '')}" placeholder="naam eenheid">
         <input type="number" inputmode="decimal" id="epUnitGrams" value="${p.unitGrams ?? ''}" placeholder="gram per stuk">
       </div>
+      <label class="opt">Optionele labelgegevens — handmatig overnemen van verpakking</label>
+      <div class="grid2">
+        <input type="text" id="epBarcode" inputmode="numeric" value="${escapeAttr(p.barcode || '')}" placeholder="barcode">
+        <input type="text" id="epLabelText" value="${escapeAttr(p.labelText || '')}" placeholder="label/bron">
+      </div>
       <button class="btn-primary" id="epSave">${product ? 'Opslaan' : 'Aanmaken'}</button>
     </div>`;
   document.getElementById('sheetClose').onclick = closeSheet;
@@ -585,7 +600,9 @@ function openProductEditor(product, prefill = null) {
       cPer100g: +document.getElementById('epC').value || 0,
       fPer100g: +document.getElementById('epF').value || 0,
       unitName: unitName && unitGrams ? unitName : null,
-      unitGrams: unitName && unitGrams ? unitGrams : null
+      unitGrams: unitName && unitGrams ? unitGrams : null,
+      barcode: document.getElementById('epBarcode').value,
+      labelText: document.getElementById('epLabelText').value
     };
     if (product) updateProduct(product.id, fields);
     else createProduct(fields);
@@ -754,18 +771,13 @@ function productFromFields(f) {
 
 function clamp01(x) { return Number.isFinite(x) ? Math.min(1, Math.max(0, x)) : 0; }
 
-// Matchkwaliteit van een productnaam tegen query `q` (lowercase). Lager = beter;
-// -1 = geen match. Gebruikt door de gerankte productzoekfunctie (#28).
-function matchRank(name, q) {
-  const n = String(name).toLowerCase();
-  if (n === q) return 0;
-  if (n.startsWith(q)) return 1;
-  if (n.split(/[^a-z0-9]+/).some(w => w && w.startsWith(q))) return 2;
-  if (n.includes(q)) return 3;
-  return -1;
-}
-
 // ---- Helpers --------------------------------------------------------------
+
+function productMetaHtml(product) {
+  const parts = productMetaParts(product);
+  if (!parts.length) return '';
+  return `<div class="food-meta">${parts.map(escapeHtml).join(' · ')}</div>`;
+}
 
 function fmtGrams(product, grams) {
   if (product?.unitName && product.unitGrams) {
