@@ -30,6 +30,13 @@ Producten mogen verborgen worden als ze nog in logs voorkomen. Hard delete mag a
 
 Productzoek (toevoeg-sheet) rankt op matchkwaliteit (exact → prefix → woordbegin → deelstring) en daarbinnen op gebruik (`useCount`, `lastUsedAt`), zodat het bedoelde product bovenaan staat i.p.v. puur alfabetisch.
 
+Meal sections tonen snelle herhaalopties via `frequentMealProducts(category,
+limit)`. Deze helper telt producten per maaltijdcategorie over bestaande logs,
+sorteert op categorie-specifieke frequentie en recency, en gebruikt de meest
+recente portie of `lastGrams` als fallback. Quick-add loopt door dezelfde
+`addLogItem`-mutatie als handmatig toevoegen, waardoor gebruiksstatistieken en
+sync hetzelfde blijven.
+
 ## Recepten En Templates
 
 Huidige meal templates bewaren:
@@ -139,4 +146,3 @@ Nutrition analyses moeten antwoorden:
 - Welke producten/templates maken compliance makkelijker?
 
 Zie [14_ANALYTICS_AND_DASHBOARDS.md](14_ANALYTICS_AND_DASHBOARDS.md).
-

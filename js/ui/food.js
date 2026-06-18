@@ -9,7 +9,8 @@ import {
   normalizeDay, dayTotals, categoryKcal, macrosFor,
   visibleProducts, getProduct, toggleFavorite, createProduct, updateProduct,
   removeProduct, addLogItem, updateLogItem, removeLogItem,
-  visibleTemplates, saveTemplate, applyTemplate, deleteTemplate
+  visibleTemplates, saveTemplate, applyTemplate, deleteTemplate,
+  frequentMealProducts
 } from '../nutrition.js';
 
 // Welke maaltijd-secties dichtgeklapt zijn (per categorie-key).
@@ -90,6 +91,17 @@ function renderSections(n) {
       </div>`;
     });
 
+    const quick = frequentMealProducts(key, 3)
+      .filter(q => !items.some(it => it.productId === q.productId))
+      .slice(0, 3);
+    if (quick.length) {
+      html += `<div class="quick-adds">
+        ${quick.map(q => `<button class="quick-add" data-qcat="${key}" data-qprod="${escapeAttr(q.productId)}" type="button">
+          <span>${escapeHtml(q.product.name)}</span><small>${fmtGrams(q.product, q.grams)}</small>
+        </button>`).join('')}
+      </div>`;
+    }
+
     if (isVoiceEnabled()) {
       html += `<div class="meal-actions">
         <button class="voice-add" data-voice="${key}" aria-label="Spreek in wat je at">
@@ -122,6 +134,18 @@ function renderSections(n) {
   // Voeg toe (handmatig)
   sec.querySelectorAll('[data-add]').forEach(b => {
     b.onclick = () => openAddSheet(n, b.dataset.add);
+  });
+  // Snelle herhaalopties per maaltijdcategorie
+  sec.querySelectorAll('[data-qprod]').forEach(b => {
+    b.onclick = () => {
+      const cat = b.dataset.qcat;
+      const productId = b.dataset.qprod;
+      const match = frequentMealProducts(cat, 10).find(q => q.productId === productId);
+      if (!match) return;
+      addLogItem(n, cat, productId, match.grams);
+      tick(7);
+      renderFood();
+    };
   });
   // Spraak
   sec.querySelectorAll('[data-voice]').forEach(b => {

@@ -29,7 +29,7 @@ Huidige geïmplementeerde hoofdfeatures:
 - Oefeninghistorie per concrete `exerciseId`.
 - Setlogging met gewicht, reps, RIR-select en PR-detectie.
 - Dagcompletion en notities.
-- Voeding met productbibliotheek, macros per 100g, maaltijdcategorieën en templates; gerankte productzoek (matchkwaliteit + gebruik).
+- Voeding met productbibliotheek, macros per 100g, maaltijdcategorieën, frequent meal quick-add en templates; gerankte productzoek (matchkwaliteit + gebruik).
 - Product lookup via Claude Haiku met preview en confidence-indicator.
 - Voice meal logging via browser mic, Whisper en Claude, met confidence-pills en per-100g check voor nieuwe producten.
 - Offline voice queue in IndexedDB.
@@ -97,4 +97,3 @@ Huidige prioriteitslijn:
 - UX en dashboards: [13_UI_UX_GUIDELINES.md](13_UI_UX_GUIDELINES.md), [14_ANALYTICS_AND_DASHBOARDS.md](14_ANALYTICS_AND_DASHBOARDS.md).
 - Intelligence: [16_FITNESS_INTELLIGENCE_MODEL.md](16_FITNESS_INTELLIGENCE_MODEL.md), [17_DIGITAL_FITNESS_TWIN.md](17_DIGITAL_FITNESS_TWIN.md).
 - Development: [19_CLAUDE_CODE_GUIDELINES.md](19_CLAUDE_CODE_GUIDELINES.md), [20_RELEASE_NOTES.md](20_RELEASE_NOTES.md).
-
