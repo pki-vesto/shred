@@ -2,6 +2,11 @@
 
 Dit bestand definieert het formaat voor toekomstige releases. Vul geen fictieve releases in. Voeg alleen entries toe wanneer er werkelijk iets is gewijzigd en gedeployed of bewust als release is gemarkeerd.
 
+## Unreleased
+
+- N1 Aggregatie-parity: `api/core.js` exporteert de gedeelde Shred/Health Core-aggregatiehelpers expliciet en `api/test-aggregate-parity.mjs` vergelijkt nutrition/session-formules, units, external IDs en metadata tegen een Health Core-snapshot.
+- Testcommand: `npm --prefix api test` draait nu aggregate-parity, Health Core dual-write en sync-contract tests.
+
 ## 2026-06-15 - v1.12.0
 
 Service-worker update-UX en sync-diagnostics (#19 — platformdoelen 182 en 183).

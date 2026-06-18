@@ -95,6 +95,8 @@ Als tests niet gedraaid zijn, vermeld dat expliciet.
 
 Bestaande checks (draaibaar):
 
+- `npm --prefix api test` — draait de aggregate-parity, Health Core dual-write en sync-contract tests.
+- `api/test-aggregate-parity.mjs` — parity guard voor de gedeelde Shred/Health Core-aggregatieformules (`node api/test-aggregate-parity.mjs`).
 - `api/test-core.mjs` — Health Core dual-write op wegwerp-DB's (`node api/test-core.mjs`, of via de container). Raakt nooit echte data.
 - `api/test-sync.mjs` — sync-contract round-trip (POST/GET/LWW/since) tegen de echte router op een wegwerp-DB.
 - `api/check-auth-boundary.sh` — borgt dat API/Whisper geen host-poort hebben (`bash api/check-auth-boundary.sh`).
@@ -129,4 +131,3 @@ Nooit publiek exposen. Geen Tailscale Funnel of port-forward zonder app-auth ont
 - Log geen secrets.
 - Stuur audio niet extern.
 - Beperk prompts tot noodzakelijke context.
-
