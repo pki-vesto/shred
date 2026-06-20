@@ -1,8 +1,9 @@
 import { state, mutate } from '../state.js';
 import { addPhoto, deletePhoto, hydratePhotoURLs } from '../photos.js';
 import { todayNum, weekOf } from '../helpers.js';
-import { toast } from './components.js';
+import { confBadge, tick, toast } from './components.js';
 import { weightData, weightMetrics, ewmaSeries, measurementTrend } from '../bodyMetrics.js';
+import { confLevel } from '../dashboardMetrics.js';
 
 export function renderBody() {
   const input = document.getElementById('weightInput');
@@ -122,33 +123,57 @@ const MEASURE_FIELDS = [
   ['waist', 'Taille'], ['hip', 'Heup'], ['chest', 'Borst'], ['arm', 'Arm'], ['thigh', 'Dij']
 ];
 
+function fmtCm(value) {
+  return value.toFixed(1).replace('.', ',');
+}
+
+function signedCm(value) {
+  return `${value >= 0 ? '+' : ''}${fmtCm(value)}`;
+}
+
+function renderMeasurementCards() {
+  const cards = MEASURE_FIELDS.map(([key, label]) => {
+    const trend = measurementTrend(state.measurements || {}, key);
+    if (!trend.latest) return '';
+
+    const delta = trend.totalDelta;
+    const tone = delta < -0.05 ? 'down' : delta > 0.05 ? 'up' : 'flat';
+    const rate = trend.count >= 2 && trend.trendPerWeek !== null
+      ? `<span class="measure-card-rate ${tone}">${signedCm(trend.trendPerWeek)} cm/week</span>`
+      : '<span class="measure-card-rate flat">Trend bouwt op</span>';
+    const deltaText = delta === null ? '—' : `${signedCm(delta)} cm sinds start`;
+
+    return `
+      <div class="measure-card ${tone}">
+        <div class="measure-card-top">
+          <div class="measure-card-label">${label}</div>
+          ${confBadge(confLevel(trend.count, 1, 3))}
+        </div>
+        <div class="measure-card-value">${fmtCm(trend.latest.v)}<small> cm</small></div>
+        <div class="measure-card-sub">${deltaText}</div>
+        ${rate}
+      </div>`;
+  }).filter(Boolean).join('');
+
+  return cards ? `<div class="measure-cards" aria-label="Lichaamsmetingen">${cards}</div>` : '';
+}
+
 function renderMeasurements(today) {
   const wrap = document.getElementById('measureSection');
   if (!wrap) return;
-  const cur = state.measurements[today] || {};
-  const waist = measurementTrend(state.measurements, 'waist');
+  const cur = (state.measurements || {})[today] || {};
 
   const inputs = MEASURE_FIELDS.map(([key, label]) => `
     <div class="measure-cell">
       <label>${label}</label>
       <div class="measure-input"><input type="number" step="0.1" inputmode="decimal" id="m-${key}" value="${cur[key] ?? ''}" placeholder="—"><span>cm</span></div>
     </div>`).join('');
-
-  let trendHtml = '';
-  if (waist.latest) {
-    const d = waist.totalDelta;
-    const tone = d < -0.05 ? 'down' : d > 0.05 ? 'up' : 'flat';
-    const rate = waist.trendPerWeek === null ? '' : ` · ${signed(waist.trendPerWeek)} cm/wk`;
-    trendHtml = `<div class="measure-trend ${tone}">
-      <div><span class="mt-val">${waist.latest.v.toFixed(1)}</span> cm taille</div>
-      <div class="mt-sub">${signed(d)} cm sinds start${rate} · ${waist.count} ${waist.count === 1 ? 'meting' : 'metingen'}</div>
-    </div>`;
-  }
+  const cardsHtml = renderMeasurementCards();
 
   wrap.innerHTML = `
     <div class="measure-grid">${inputs}</div>
     <button class="btn-primary" id="measureSave">Metingen opslaan (dag ${today})</button>
-    ${trendHtml}
+    ${cardsHtml}
     <div class="measure-hint">Meet nuchter, op dezelfde plek. Taille is bij recompositie vaak een scherper signaal dan de weegschaal.</div>`;
 
   document.getElementById('measureSave').onclick = () => {
