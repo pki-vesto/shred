@@ -2,6 +2,23 @@
 
 Dit bestand definieert het formaat voor toekomstige releases. Vul geen fictieve releases in. Voeg alleen entries toe wanneer er werkelijk iets is gewijzigd en gedeployed of bewust als release is gemarkeerd.
 
+## 2026-06-20 - v1.13.0
+
+Deterministische faserapport-aggregator (#33).
+
+### Added
+- Nieuwe pure `phaseReport(fromDay, toDay)` in `js/reportMetrics.js` met periode, training, voeding, lichaam, herstel en een korte deterministische aanbeveling.
+- Training aggregeert geplande/voltooide sessies, sessievolume, volume per spiergroep, PR-soorten en kniebelasting via bestaande metricshelpers.
+- Voeding aggregeert gelogde dagen, kcal/eiwit-gemiddelden, macro-compliance en eiwit-compliance tegenover `state.goals`.
+- Lichaam rapporteert EWMA-trendgewicht begin/eind, delta, kg/week en plateau-status op basis van bestaande body-metrics.
+
+### Operations
+- `CACHE_VERSION` `shred-v26` → `shred-v27`; nieuw shell-asset `js/reportMetrics.js` toegevoegd.
+
+### Verification
+- `node --check` op `js/reportMetrics.js` en `service-worker.js`: OK.
+- Lokale logica-test met mock-state voor 30 en 90 dagen: rapportstructuur, ontbrekende data en reverse range gecontroleerd.
+
 ## 2026-06-15 - v1.12.0
 
 Service-worker update-UX en sync-diagnostics (#19 — platformdoelen 182 en 183).
