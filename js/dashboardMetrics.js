@@ -1,8 +1,8 @@
 import { state } from './state.js';
-import { dateForDay, dayIsComplete, todayNum, weekOf } from './helpers.js';
+import { TOTAL_DAYS, dateForDay, dayIsComplete, todayNum, weekOf } from './helpers.js';
 import { sessionFor } from './sessions.js';
 import { dayTotals } from './nutrition.js';
-import { weightMetrics } from './bodyMetrics.js';
+import { linearTrendPerWeek, weightData, weightMetrics } from './bodyMetrics.js';
 
 const TRAINING_DAYS_PER_WEEK = 5;
 
@@ -276,6 +276,181 @@ export function calorieVsWeight(uptoDay = todayNum(), windowDays = 14) {
     plateauV2: wm.plateauV2,
     conf,
     verdict
+  };
+}
+
+export function programPhases() {
+  return [
+    { key: 'phase-1', label: 'Fase 1', start: 1, end: 30 },
+    { key: 'phase-2', label: 'Fase 2', start: 31, end: 60 },
+    { key: 'phase-3', label: 'Fase 3', start: 61, end: TOTAL_DAYS }
+  ];
+}
+
+export function fullProgramRange() {
+  return { key: 'full', label: 'Volledig (90 dagen)', start: 1, end: TOTAL_DAYS };
+}
+
+export function phaseReport(range) {
+  const r = normalizeRange(range);
+  if (!r) return { range: null, domains: [] };
+
+  return {
+    range: r,
+    domains: [
+      phaseTrainingReport(r),
+      phaseNutritionReport(r),
+      phaseBodyReport(r),
+      phaseRecoveryReport(r)
+    ]
+  };
+}
+
+function normalizeRange(range) {
+  const start = Math.max(1, Math.min(TOTAL_DAYS, Number(range?.start)));
+  const end = Math.max(start, Math.min(TOTAL_DAYS, Number(range?.end)));
+  if (!Number.isFinite(start) || !Number.isFinite(end)) return null;
+  return {
+    key: range?.key || `${start}-${end}`,
+    label: range?.label || `Dag ${start}-${end}`,
+    start,
+    end
+  };
+}
+
+function elapsedDaysInRange(range) {
+  const end = Math.min(range.end, todayNum());
+  const days = [];
+  for (let day = range.start; day <= end; day++) days.push(day);
+  return days;
+}
+
+function phaseTrainingReport(range) {
+  const elapsed = elapsedDaysInRange(range);
+  const expectedDays = elapsed.filter(day => sessionFor(dateForDay(day)) !== 'R');
+  const done = expectedDays.filter(dayIsComplete).length;
+  const missing = expectedDays.length - done;
+  const pct = expectedDays.length ? done / expectedDays.length : null;
+  const confidence = confLevel(expectedDays.length, 2, 6);
+
+  if (!expectedDays.length) {
+    return emptyDomain('training', 'Training', confidence, 'Deze periode is nog niet gestart.');
+  }
+
+  return {
+    key: 'training',
+    title: 'Training',
+    tone: pct >= 0.85 ? 'good' : pct >= 0.6 ? 'warn' : 'neutral',
+    value: `${Math.round(pct * 100)}%`,
+    unit: 'voltooid',
+    trend: missing ? `${missing} sessies ontbreken` : 'op schema',
+    confidence,
+    metrics: [
+      `${done}/${expectedDays.length} geplande sessies voltooid`,
+      `${elapsed.length} verstreken dagen in deze periode`
+    ],
+    empty: false
+  };
+}
+
+function phaseNutritionReport(range) {
+  const elapsed = elapsedDaysInRange(range);
+  const logged = [];
+  for (const day of elapsed) {
+    const totals = dayTotals(day);
+    if (totals.kcal > 0 || totals.p > 0 || totals.c > 0 || totals.f > 0) logged.push({ day, totals, score: nutritionScoreForDay(day) });
+  }
+
+  const confidence = confLevel(logged.length, 2, 7);
+  if (!elapsed.length) {
+    return emptyDomain('nutrition', 'Voeding', confidence, 'Deze periode is nog niet gestart.');
+  }
+  if (!logged.length) {
+    return emptyDomain('nutrition', 'Voeding', confidence, 'Voeding ontbreekt in deze periode. Log maaltijden voordat gemiddelden zinvol zijn.');
+  }
+
+  const avgKcal = logged.reduce((sum, d) => sum + d.totals.kcal, 0) / logged.length;
+  const avgProtein = logged.reduce((sum, d) => sum + d.totals.p, 0) / logged.length;
+  const scores = logged.map(d => d.score).filter(s => s !== null);
+  const avgScore = scores.length ? scores.reduce((sum, s) => sum + s, 0) / scores.length : null;
+  const missing = elapsed.length - logged.length;
+
+  return {
+    key: 'nutrition',
+    title: 'Voeding',
+    tone: avgScore === null ? 'neutral' : avgScore >= 85 ? 'good' : avgScore >= 70 ? 'warn' : 'neutral',
+    value: avgScore === null ? `${Math.round(avgKcal)}` : `${Math.round(avgScore)}%`,
+    unit: avgScore === null ? 'kcal/dag' : 'compliance',
+    trend: missing ? `${missing} dagen ontbreken` : 'volledig gelogd',
+    confidence,
+    metrics: [
+      `${logged.length}/${elapsed.length} dagen met voeding`,
+      `Gem. ${Math.round(avgKcal)} kcal · ${Math.round(avgProtein)} g eiwit`
+    ],
+    empty: false
+  };
+}
+
+function phaseBodyReport(range) {
+  const elapsed = elapsedDaysInRange(range);
+  const data = weightData(state.weights).filter(d => d.day >= range.start && d.day <= Math.min(range.end, todayNum()));
+  const confidence = confLevel(data.length, 2, 6);
+  if (!elapsed.length) {
+    return emptyDomain('body', 'Lichaam', confidence, 'Deze periode is nog niet gestart.');
+  }
+  if (!data.length) {
+    return emptyDomain('body', 'Lichaam', confidence, 'Weegdata ontbreekt in deze periode. Geen trend tonen zonder metingen.');
+  }
+
+  const latest = data[data.length - 1];
+  const delta = latest.w - data[0].w;
+  const trend = linearTrendPerWeek(data);
+  const trendLabel = trend === null ? 'trend ontbreekt' : `${signed(trend)} kg/wk`;
+
+  return {
+    key: 'body',
+    title: 'Lichaam',
+    tone: trend === null ? 'neutral' : trend <= -0.2 ? 'good' : trend < 0.2 ? 'neutral' : 'warn',
+    value: `${latest.w.toFixed(1)}`,
+    unit: 'kg laatst',
+    trend: trendLabel,
+    confidence,
+    metrics: [
+      `${data.length} weegmomenten`,
+      `Verandering ${signed(delta)} kg sinds eerste meting`
+    ],
+    empty: false
+  };
+}
+
+function phaseRecoveryReport(range) {
+  return {
+    key: 'recovery',
+    title: 'Herstel',
+    tone: 'neutral',
+    value: 'Nog niet gekoppeld',
+    unit: '',
+    trend: 'geen slaap/HRV-bron',
+    confidence: 'low',
+    metrics: [
+      'Hersteldata via Health Core is nog niet gekoppeld.',
+      `Periode dag ${range.start}-${range.end} blijft zichtbaar zonder herstelclaim.`
+    ],
+    empty: false
+  };
+}
+
+function emptyDomain(key, title, confidence, text) {
+  return {
+    key,
+    title,
+    tone: 'neutral',
+    value: 'Ontbreekt',
+    unit: '',
+    trend: 'onvoldoende data',
+    confidence,
+    metrics: [text],
+    empty: true
   };
 }
 
