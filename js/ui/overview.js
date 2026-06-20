@@ -1,7 +1,7 @@
 import { state, saveState } from '../state.js';
 import { SESSIONS, sessionFor } from '../sessions.js';
 import { TOTAL_DAYS, dateForDay, todayNum, dayIsComplete, isHardcodedDeload, weekOf, resolveSlots, shortDate } from '../helpers.js';
-import { dashboardKpis, weeklyReview, macroWeeklySeries, goalPace, calorieVsWeight, nutritionScoreForDay, trainingHeatmapStatus, nutritionContextSplit, confLevel } from '../dashboardMetrics.js';
+import { dashboardKpis, weeklyReview, macroWeeklySeries, goalPace, calorieVsWeight, nutritionScoreForDay, trainingHeatmapStatus, nutritionContextSplit, confLevel, confLabelOf, programPhases, fullProgramRange, phaseReport } from '../dashboardMetrics.js';
 import { confBadge } from './components.js';
 import { weeklyVolume, kneeLoadForSession, weekPRSummary, weeklyVolumeSeries, prTimeline, PR_LABELS } from '../trainingMetrics.js';
 
@@ -25,6 +25,7 @@ export function renderOverview(switchTab) {
   renderTrainingIntel();
   renderProgressIntel();
   renderHeatmaps(switchTab);
+  renderPhaseReport();
 
   const content = document.getElementById('overviewContent');
   const today = todayNum();
@@ -85,6 +86,88 @@ function renderDashboard() {
       `).join('')}
     </div>
     ${review.recommendation ? `<div class="review-rec"><span class="rr-ic">→</span><span>${review.recommendation}</span></div>` : ''}`;
+}
+
+let phaseReportSelection = 'phase-1';
+
+function phaseReportRanges() {
+  return [...programPhases(), fullProgramRange()];
+}
+
+function selectedPhaseRange() {
+  const ranges = phaseReportRanges();
+  return ranges.find(r => r.key === phaseReportSelection) || ranges[0] || null;
+}
+
+function renderPhaseReport() {
+  const section = document.getElementById('phaseReportSection');
+  const select = document.getElementById('phaseReportPeriod');
+  const header = document.getElementById('phaseReportHeader');
+  const empty = document.getElementById('phaseReportEmpty');
+  const cards = document.getElementById('phaseReportCards');
+  if (!section || !select || !header || !empty || !cards) return;
+
+  const ranges = phaseReportRanges();
+  if (!ranges.length) {
+    header.textContent = '';
+    cards.innerHTML = '';
+    empty.textContent = 'Programmaperiodes zijn nog niet beschikbaar.';
+    empty.hidden = false;
+    return;
+  }
+
+  if (!ranges.some(r => r.key === phaseReportSelection)) phaseReportSelection = ranges[0].key;
+  select.innerHTML = ranges.map(r => `<option value="${r.key}" ${r.key === phaseReportSelection ? 'selected' : ''}>${r.label}</option>`).join('');
+  select.onchange = () => {
+    phaseReportSelection = select.value;
+    renderPhaseReport();
+  };
+
+  const range = selectedPhaseRange();
+  const report = phaseReport(range);
+  if (!report.range) {
+    header.textContent = '';
+    cards.innerHTML = '';
+    empty.textContent = 'Deze periode kan niet worden geladen.';
+    empty.hidden = false;
+    return;
+  }
+
+  header.textContent = `${report.range.label} · ${shortDate(report.range.start)} - ${shortDate(report.range.end)}`;
+  const missingCount = report.domains.filter(d => d.empty || d.confidence === 'low').length;
+  empty.hidden = missingCount === 0;
+  empty.textContent = missingCount
+    ? 'Dunne of ontbrekende data wordt hier expliciet zo getoond; dat is geen negatieve score.'
+    : '';
+
+  cards.innerHTML = report.domains.map(domain => `
+    <article class="phase-card ${domain.tone || 'neutral'} ${domain.empty ? 'empty' : ''}">
+      <div class="phase-card-top">
+        <div>
+          <div class="phase-card-title">${domain.title} ${phaseConfidenceBadge(domain.confidence)}</div>
+          <div class="phase-card-value">${domain.value}${domain.unit ? `<small>${domain.unit}</small>` : ''}</div>
+        </div>
+        <span class="phase-trend ${trendClass(domain)}" title="Zekerheid: ${confLabelOf(domain.confidence) || 'betrouwbaar'}">${domain.trend}</span>
+      </div>
+      <div class="phase-card-metrics">
+        ${(domain.metrics || []).map(metric => `<span>${metric}</span>`).join('')}
+      </div>
+    </article>
+  `).join('');
+}
+
+function trendClass(domain) {
+  if (domain.empty) return 'flat';
+  if (domain.tone === 'good') return 'up';
+  if (domain.tone === 'warn' || domain.tone === 'bad') return 'down';
+  return 'flat';
+}
+
+function phaseConfidenceBadge(level) {
+  const label = confLabelOf(level);
+  if (!label) return '';
+  const cls = level === 'low' ? 'bad' : level === 'medium' ? 'warn' : 'good';
+  return `<span class="conf-badge ${cls}" title="Zekerheid: ${label}">${label}</span>`;
 }
 
 // ---- Trainingsintelligentie -------------------------------------------------

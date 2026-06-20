@@ -1,6 +1,6 @@
 // Bump this string on every deploy that changes app shell assets.
 // The activate step deletes any cache whose name does not match.
-const CACHE_VERSION = 'shred-v26';
+const CACHE_VERSION = 'shred-v27';
 const SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const PHOTO_CACHE = `${CACHE_VERSION}-photos`;
 
