@@ -7,7 +7,7 @@ import { weightMetrics, weightData, ewmaSeries, trendForecast } from './bodyMetr
 import { kneeLoadForSession, sessionPRKinds, sessionSummary } from './trainingMetrics.js';
 
 const PR_KINDS = ['weight', 'reps', 'volume', 'e1rm'];
-const REST_RECOVERY_TEXT = 'Recovery-data (slaap/HRV) nog niet gekoppeld via Health Core.';
+const REST_RECOVERY_TEXT = 'Recovery-data nog niet gekoppeld via Health Core.';
 
 export function phaseReport(fromDay, toDay) {
   const period = buildPeriod(fromDay, toDay);
