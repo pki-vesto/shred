@@ -6,6 +6,14 @@ import { weightMetrics } from './bodyMetrics.js';
 
 const TRAINING_DAYS_PER_WEEK = 5;
 
+export function proteinPerKg(goalP, metrics) {
+  const proteinGoal = Number(goalP);
+  const trendWeight = Number(metrics?.ewma);
+  if (!Number.isFinite(proteinGoal) || proteinGoal <= 0) return null;
+  if (!Number.isFinite(trendWeight) || trendWeight <= 0) return null;
+  return Math.round((proteinGoal / trendWeight) * 10) / 10;
+}
+
 export function currentWeekRange(day = todayNum()) {
   const week = weekOf(day);
   const start = (week - 1) * 7 + 1;
