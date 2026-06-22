@@ -14,6 +14,110 @@ import { weeklyReview, nutritionScoreForDay, confLevel } from './dashboardMetric
 
 export const REPORT_SCHEMA_VERSION = 1;
 
+export function fullProgramRange() {
+  return { fromDay: 1, toDay: TOTAL_DAYS };
+}
+
+export function programPhases() {
+  const phases = [];
+  let phaseCount = 0;
+  let deloadCount = 0;
+  let fromDay = 1;
+  let inDeload = isHardcodedDeload(1);
+
+  for (let day = 2; day <= TOTAL_DAYS + 1; day++) {
+    const nextInDeload = day <= TOTAL_DAYS ? isHardcodedDeload(day) : !inDeload;
+    if (nextInDeload === inDeload) continue;
+
+    const toDay = day - 1;
+    const labelIndex = inDeload ? ++deloadCount : ++phaseCount;
+    phases.push({
+      index: phases.length + 1,
+      label: `${inDeload ? 'Deload' : 'Fase'} ${labelIndex}`,
+      fromDay,
+      toDay,
+      isDeloadPhase: inDeload
+    });
+    fromDay = day;
+    inDeload = nextInDeload;
+  }
+
+  return phases;
+}
+
+export function currentPhase(day = todayNum()) {
+  const n = Math.round(Number(day));
+  if (!Number.isFinite(n) || n < 1 || n > TOTAL_DAYS) return undefined;
+  return programPhases().find(phase => n >= phase.fromDay && n <= phase.toDay);
+}
+
+export function daysLogged(fromDay, toDay) {
+  const range = normalizeProgramRange(fromDay, toDay);
+  if (!range) return 0;
+
+  const { lo, hi } = range;
+  let logged = 0;
+
+  for (let day = lo; day <= hi; day++) {
+    const dateKey = isoDateForDay(day);
+    if (hasTrainingLog(day, dateKey) || hasNutritionLog(day, dateKey) || hasWeightLog(day, dateKey)) logged++;
+  }
+
+  return logged;
+}
+
+function normalizeProgramRange(fromDay, toDay) {
+  const from = Math.round(Number(fromDay));
+  const to = Math.round(Number(toDay));
+  if (!Number.isFinite(from) || !Number.isFinite(to)) return null;
+
+  const lo = Math.max(1, Math.min(from, to));
+  const hi = Math.min(TOTAL_DAYS, Math.max(from, to));
+  return lo <= hi ? { lo, hi } : null;
+}
+
+function isoDateForDay(day) {
+  const date = dateForDay(day);
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+function keyedValue(collection, day, dateKey) {
+  return collection?.[dateKey] ?? collection?.[day];
+}
+
+function hasTrainingLog(day, dateKey) {
+  const completed = keyedValue(state.completed, day, dateKey);
+  if (completed && Object.values(completed).some(Boolean)) return true;
+
+  const cardio = keyedValue(state.cardio, day, dateKey);
+  if (cardio && Object.values(cardio).some(v => v !== null && v !== undefined && v !== '' && v !== false)) return true;
+
+  for (const entries of Object.values(state.sets || {})) {
+    if ((entries || []).some(entry =>
+      (entry?.day === day || entry?.day === dateKey || entry?.date === dateKey) && hasFilledSet(entry)
+    )) return true;
+  }
+  return false;
+}
+
+function hasFilledSet(entry) {
+  return (entry?.sets || []).some(set => (parseFloat(set?.w) || 0) > 0 || (parseInt(set?.r) || 0) > 0);
+}
+
+function hasNutritionLog(day, dateKey) {
+  const food = keyedValue(state.foods, day, dateKey);
+  if (!food) return false;
+  return Object.values(food).some(items => Array.isArray(items) && items.length > 0);
+}
+
+function hasWeightLog(day, dateKey) {
+  const weight = Number(keyedValue(state.weights, day, dateKey));
+  return Number.isFinite(weight) && weight > 0;
+}
+
 // 3 fasen × ~5 weken (incl. deload-week). Phase 1: dag 1-35, Phase 2: dag 36-70,
 // Phase 3: dag 71-90. Houdt aan hoe de hardcoded deload-weken (5 en 10) als
 // scharnier tussen blokken liggen.

@@ -1,5 +1,7 @@
 import { state } from '../state.js';
 import { TOTAL_DAYS, dateForDay, formatDate } from '../helpers.js';
+import { weightMetrics } from '../bodyMetrics.js';
+import { proteinPerKg } from '../dashboardMetrics.js';
 import { tick, toast } from './components.js';
 import { openSheet, closeSheet, sheetBody } from './sheet.js';
 import { startVoiceFlow, renderPendingBanner, isVoiceEnabled } from './voice.js';
@@ -34,6 +36,7 @@ export function renderFood() {
 
 function renderMacroSummary(totals) {
   const g = state.goals;
+  const pPerKg = proteinPerKg(g.p, weightMetrics(state.weights));
   const kcalPct = Math.min(100, (totals.kcal / g.kcal) * 100);
   const kcalOver = totals.kcal > g.kcal;
   const left = g.kcal - totals.kcal;
@@ -45,6 +48,7 @@ function renderMacroSummary(totals) {
       <div class="mlabel">${lbl}</div>
       <div class="mval">${Math.round(val)}<span> / ${goal}g</span></div>
       <div class="macro-bar"><div class="macro-bar-fill ${over ? 'over' : cls}" style="width:${pct}%"></div></div>
+      ${cls === 'p' && pPerKg !== null ? `<span class="mperkg">~${fmt1(pPerKg)} g/kg</span>` : ''}
     </div>`;
   };
 
@@ -56,6 +60,10 @@ function renderMacroSummary(totals) {
     </div>
     <div class="kcal-track"><div class="fill ${kcalOver ? 'over' : ''}" style="width:${kcalPct}%"></div></div>
     <div class="macro-grid">${macroCell('Eiwit', totals.p, g.p, 'p')}${macroCell('Koolh.', totals.c, g.c, 'c')}${macroCell('Vet', totals.f, g.f, 'f')}</div>`;
+}
+
+function fmt1(n) {
+  return Number(n).toFixed(1).replace('.', ',');
 }
 
 // ---- Maaltijd-secties -----------------------------------------------------

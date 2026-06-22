@@ -68,6 +68,13 @@ Primaire doelen:
 
 Compliance weegt calorieën en eiwit zwaarder dan carbs/fat. Voor recompositie is eiwitminimum belangrijker dan perfecte macroverdeling.
 
+`calorieCyclingTargets(goals, delta)` ontwerpt read-only trainingsdag- en
+rustdagtargets uit het huidige macrodoel. Eiwit blijft stabiel, trainingsdagen
+krijgen conservatief meer kcal/koolhydraten en rustdagen lager kcal met een
+veilige clamp. Het 7-daags gewogen gemiddelde blijft gelijk aan het basisdoel,
+zodat cycling geen automatische calorie-aanpassing is maar een uitvoeringsvorm
+van hetzelfde weekdoel.
+
 ## Maaltijdstructuur
 
 Huidige categorieën:
