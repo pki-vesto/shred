@@ -5,7 +5,8 @@
   "type": "module",
   "engines": { "node": ">=22" },
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "node test-aggregate-parity.mjs && node test-core.mjs && node test-sync.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.40.0",
