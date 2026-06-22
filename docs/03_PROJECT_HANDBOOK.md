@@ -36,7 +36,7 @@ Huidige geïmplementeerde hoofdfeatures:
 - Body-tab met gewicht, foto's en trendberekeningen: EWMA-trendgewicht (ook als grafieklijn), plateau v2, weeg-consistentie en 2-weeks forecast.
 - Lichaamsmetingen (taille/heup/borst/arm/dij) als eigen sync-type `measurements`, met taille-trend en Health Core dual-write naar `body.*` (cm).
 - Cardio-logging (duur/RPE/gem. HR/intervallen) als eigen sync-type `cardio`, met zone-2 hartslagcontext (optionele max-HR) en dual-write naar `fitness.cardio_minutes`.
-- Overview/dashboard met week-KPI's (incl. confidence-badges) en een volledig weekrapport (training, lichaam, voeding, eiwit, herstel) met één concrete aanbeveling.
+- Overview/dashboard met week-KPI's (incl. confidence-badges) en een volledig weekrapport (training, lichaam, voeding, eiwit, herstel) met één concrete aanbeveling en deterministisch hersteladvies na gemiste krachtsessies.
 - Trainingsintelligentie op het Overzicht: weekvolume + per spiergroep met week-op-week delta, volume-trend per week, PR-tijdlijn (gewicht/reps/volume/e1RM) en kniebelasting per laatste krachtsessie met historie-stippen.
 - Voortgang & tempo op het Overzicht: goal-pace (sessies voltooid vs verwacht + dag-90 gewichtsprojectie), macro-trend (gem. kcal per week vs doel) en read-only calorie cycling targets.
 - Sync tussen iPhone en Mac via `/api/sync` en `/api/photos`.
