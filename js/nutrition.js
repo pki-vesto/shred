@@ -216,6 +216,45 @@ export function addLogItem(dayN, cat, productId, grams) {
   });
 }
 
+export function frequentMealProducts(category, limit = 4) {
+  const stats = new Map();
+  for (const day of Object.keys(state.foods || {})) {
+    const items = state.foods[day]?.[category] || [];
+    for (const item of items) {
+      const product = state.products[item.productId];
+      if (!product || product.deleted || product.hidden) continue;
+      const grams = Number(item.grams) || product.lastGrams || 100;
+      const cur = stats.get(item.productId) || {
+        product,
+        productId: item.productId,
+        count: 0,
+        lastUsedAt: 0,
+        grams
+      };
+      const ts = Number(item.addedAt) || Number(day) || 0;
+      cur.count += 1;
+      if (ts >= cur.lastUsedAt) {
+        cur.lastUsedAt = ts;
+        cur.grams = grams;
+      }
+      stats.set(item.productId, cur);
+    }
+  }
+  return Array.from(stats.values())
+    .sort((a, b) =>
+      b.count - a.count
+      || b.lastUsedAt - a.lastUsedAt
+      || a.product.name.localeCompare(b.product.name, 'nl'))
+    .slice(0, limit)
+    .map(s => ({
+      product: s.product,
+      productId: s.productId,
+      grams: s.grams || s.product.lastGrams || 100,
+      count: s.count,
+      lastUsedAt: s.lastUsedAt
+    }));
+}
+
 export function updateLogItem(dayN, cat, index, grams) {
   const day = ensureDay(dayN);
   if (!day[cat][index]) return;

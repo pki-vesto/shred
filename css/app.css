@@ -742,6 +742,12 @@ body.sheet-lock{overflow:hidden;}
 .tpl-preview{background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-md);padding:12px 14px;margin-top:6px;font-size:13px;color:var(--text-2);font-weight:600;}
 .tpl-preview div{padding:3px 0;}
 .tpl-preview .grams{color:var(--text-3);font-size:12px;}
+.quick-adds{display:flex;gap:7px;overflow-x:auto;padding:2px 0 9px;margin-bottom:2px;scrollbar-width:none;}
+.quick-adds::-webkit-scrollbar{display:none;}
+.quick-add{flex:0 0 auto;max-width:150px;background:var(--surface);border:1px solid var(--line);color:var(--text-2);border-radius:var(--r-pill);padding:7px 10px;display:flex;align-items:baseline;gap:6px;font-size:12px;font-weight:700;cursor:pointer;}
+.quick-add:active{border-color:var(--amber-line);color:var(--amber);}
+.quick-add span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.quick-add small{color:var(--text-4);font-size:10px;font-weight:800;flex-shrink:0;}
 
 /* ---- Portie-invoer ---- */
 .portion{padding:4px 2px;}

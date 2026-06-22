@@ -4,6 +4,14 @@ Dit bestand definieert het formaat voor toekomstige releases. Vul geen fictieve 
 
 ## Unreleased
 
+Frequent meal quick-add (#55 — roadmap-doel 32).
+
+### Added
+- Snelle herhaalopties per maaltijdcategorie op basis van bestaande food-loghistorie.
+- Nieuwe pure helper `frequentMealProducts(category, limit)` voor categorie-specifieke ranking en portie-afleiding.
+- Quick-add gebruikt de normale `addLogItem`-mutatie, inclusief product usage stats en sync-stamping.
+- Repeatable Node-test `tests/frequentMealProducts.test.mjs`.
+
 Meal template analytics (#53 — roadmap-doel 31).
 
 ### Added
@@ -32,6 +40,10 @@ Barcode/label handmatige invoer (#47 — roadmap-doel 29).
 - `CACHE_VERSION` `shred-v28` → `shred-v29` (`css/app.css`, `js/nutrition.js`, `js/ui/food.js` en `service-worker.js` gewijzigd).
 
 ### Verification
+- `node --test tests/frequentMealProducts.test.mjs`
+- `node --check js/nutrition.js`
+- `node --check js/ui/food.js`
+- `node --check tests/frequentMealProducts.test.mjs`
 - `node --test tests/templateAnalytics.test.mjs`
 - `node --check js/nutrition.js`
 - `node --check js/ui/food.js`
