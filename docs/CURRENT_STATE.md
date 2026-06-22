@@ -2,7 +2,7 @@
 
 Levende status van Shred Tracker. Bijgewerkt bij elke milestone. Details staan in de genummerde docs; dit is het snelle overzicht.
 
-**Laatst bijgewerkt:** 2026-06-18 · **Release:** v1.12.0 + unreleased missed-session advies · **SW cache:** `shred-v29` · **Backlog:** 57/200 klaar (zie [PRODUCT_BACKLOG.md](PRODUCT_BACKLOG.md)).
+**Laatst bijgewerkt:** 2026-06-18 · **Release:** v1.12.0 + unreleased calorie cycling + missed-session advies + backlogreconciliatie favoriete swaps + API/frontend-testupdate · **SW cache:** `shred-v29` · **Backlog:** 58/200 + N1/N2 klaar (zie [PRODUCT_BACKLOG.md](PRODUCT_BACKLOG.md)).
 
 ## Live deployment
 - Frontend (`shred`, nginx) is **bind-mounted** (`./:/usr/share/nginx/html:ro`) → wijzigingen direct live; clients herladen bij SW-versiebump.
@@ -10,9 +10,9 @@ Levende status van Shred Tracker. Bijgewerkt bij elke milestone. Details staan i
 - Bereikbaar via Tailscale Serve op `https://shred.tail9d0c71.ts.net`; intern via Caddy (:80) en nginx-fallback (:8088). API/Whisper hebben geen host-poort.
 
 ## Geïmplementeerd (hoofdlijnen)
-- 90-dagen programma, set/RIR-logging, PR-detectie, swaps met knieveiligheid + equipment-chips.
+- 90-dagen programma, set/RIR-logging, PR-detectie, swaps met knieveiligheid + equipment-chips + favoriete oefening-swaps.
 - Trainingsintelligentie (Overzicht): weekvolume + per groep + WoW-delta, volume-trend, PR-tijdlijn, kniebelasting + historie.
-- Voortgang & tempo: goal-pace (dag-90 projectie) + macro-trend.
+- Voortgang & tempo: goal-pace (dag-90 projectie), macro-trend en read-only calorie cycling targets.
 - Weekrapport met confidence per item + één aanbeveling; KPI's met confidence-badges; gemiste krachtsessies krijgen deterministisch hersteladvies.
 - Voeding: productbibliotheek, gerankte zoek, templates, AI macro-lookup, voice-logging met confidence-pills.
 - Lichaam: gewicht + EWMA-trendgewicht (grafiek), plateau v2, consistentie, forecast, foto's, **lichaamsmetingen** (taille/heup/borst/arm/dij).
@@ -25,7 +25,7 @@ Levende status van Shred Tracker. Bijgewerkt bij elke milestone. Details staan i
 - v1.12.0: service-worker update-UX en sync-diagnostics.
 
 ## Verificatie-status
-- Geautomatiseerd: `api/test-core.mjs` (dual-write), `api/test-sync.mjs` (sync-contract), `api/check-auth-boundary.sh` (poortgrens), `node --check` + ad-hoc mock-harnesses voor frontend-logica.
+- Geautomatiseerd: `npm test` (frontend metrics), `npm --prefix api test` (aggregate-parity, dual-write, sync-contract), `api/check-auth-boundary.sh` (poortgrens), `node --check` + ad-hoc mock-harnesses voor overige frontend-logica.
 - **Openstaand**: handmatige browser/PWA-verificatie op iPhone/Mac van de recente UI (analytics-secties, confidence-badges, voice-UX, metingen, sync tussen devices). Logica + serve + api zijn wel geverifieerd.
 
 ## Bekende gaten / volgende prioriteiten
