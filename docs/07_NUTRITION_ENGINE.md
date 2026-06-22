@@ -37,6 +37,16 @@ recente portie of `lastGrams` als fallback. Quick-add loopt door dezelfde
 `addLogItem`-mutatie als handmatig toevoegen, waardoor gebruiksstatistieken en
 sync hetzelfde blijven.
 
+Producten ondersteunen daarnaast handmatige labelmetadata:
+
+- `barcode`: optionele, handmatig overgenomen barcode zonder spaties/streepjes;
+- `labelText`: korte bron-/labelnotitie van de verpakking.
+
+Deze velden zijn onderdeel van het bestaande product-JSON-record en vragen geen
+schemawijziging. Productzoek matcht naast de naam ook op barcode en labeltekst,
+zodat verpakte producten later terug te vinden zijn op wat er op het etiket
+staat.
+
 ## Recepten En Templates
 
 Huidige meal templates bewaren:
@@ -44,9 +54,27 @@ Huidige meal templates bewaren:
 - naam;
 - categorie;
 - lijst van productId + grams;
+- gebruiksteller (`useCount`) en laatst toegepast (`lastUsedAt`);
 - deleted tombstone.
 
-Toekomstige recepten kunnen berekend worden als samengestelde producten, maar alleen als:
+Wanneer een template wordt toegepast, wordt de gekozen templateversie gestempeld
+met gebruiksmetadata. `templateAnalytics(category?, limit?)` vat dit samen naar
+aantal templates, gebruikte templates, totaal aantal toepassingen en top
+templates. De templatebeheer-sheet toont deze compacte analytics zodat zichtbaar
+blijft welke herbruikbare maaltijden echt loggingtijd besparen.
+
+Templates dragen ook receptachtige versie-metadata:
+
+- `recipeKey`: stabiele sleutel op basis van maaltijdcategorie + template-naam;
+- `version`: oplopend versienummer binnen dezelfde `recipeKey`;
+- `previousTemplateId`: link naar de vorige versie.
+
+Wanneer dezelfde naam binnen dezelfde maaltijdcategorie opnieuw wordt opgeslagen,
+blijft de oude compositie bestaan en wordt een nieuwe versie aangemaakt. Het
+kiezen van een template past altijd exact de geselecteerde historische versie
+toe. Dit geeft recipe-versioning zonder een nieuw sync-type of backend-schema.
+
+Toekomstige samengestelde producten kunnen hierop voortbouwen, maar alleen als:
 
 - macro's reproduceerbaar zijn;
 - wijzigingen historisch versioned zijn;
@@ -64,6 +92,13 @@ Primaire doelen:
 - fat: default 65g.
 
 Compliance weegt calorieën en eiwit zwaarder dan carbs/fat. Voor recompositie is eiwitminimum belangrijker dan perfecte macroverdeling.
+
+`calorieCyclingTargets(goals, delta)` ontwerpt read-only trainingsdag- en
+rustdagtargets uit het huidige macrodoel. Eiwit blijft stabiel, trainingsdagen
+krijgen conservatief meer kcal/koolhydraten en rustdagen lager kcal met een
+veilige clamp. Het 7-daags gewogen gemiddelde blijft gelijk aan het basisdoel,
+zodat cycling geen automatische calorie-aanpassing is maar een uitvoeringsvorm
+van hetzelfde weekdoel.
 
 ## Maaltijdstructuur
 

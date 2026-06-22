@@ -1,5 +1,7 @@
 import { state } from '../state.js';
 import { TOTAL_DAYS, dateForDay, formatDate } from '../helpers.js';
+import { weightMetrics } from '../bodyMetrics.js';
+import { proteinPerKg } from '../dashboardMetrics.js';
 import { tick, toast } from './components.js';
 import { openSheet, closeSheet, sheetBody } from './sheet.js';
 import { startVoiceFlow, renderPendingBanner, isVoiceEnabled } from './voice.js';
@@ -10,7 +12,7 @@ import {
   visibleProducts, getProduct, toggleFavorite, createProduct, updateProduct,
   removeProduct, addLogItem, updateLogItem, removeLogItem,
   visibleTemplates, saveTemplate, applyTemplate, deleteTemplate,
-  frequentMealProducts
+  frequentMealProducts, templateAnalytics, templateVersionInfo, productMatchRank, productMetaParts
 } from '../nutrition.js';
 
 // Welke maaltijd-secties dichtgeklapt zijn (per categorie-key).
@@ -34,6 +36,7 @@ export function renderFood() {
 
 function renderMacroSummary(totals) {
   const g = state.goals;
+  const pPerKg = proteinPerKg(g.p, weightMetrics(state.weights));
   const kcalPct = Math.min(100, (totals.kcal / g.kcal) * 100);
   const kcalOver = totals.kcal > g.kcal;
   const left = g.kcal - totals.kcal;
@@ -45,6 +48,7 @@ function renderMacroSummary(totals) {
       <div class="mlabel">${lbl}</div>
       <div class="mval">${Math.round(val)}<span> / ${goal}g</span></div>
       <div class="macro-bar"><div class="macro-bar-fill ${over ? 'over' : cls}" style="width:${pct}%"></div></div>
+      ${cls === 'p' && pPerKg !== null ? `<span class="mperkg">~${fmt1(pPerKg)} g/kg</span>` : ''}
     </div>`;
   };
 
@@ -56,6 +60,10 @@ function renderMacroSummary(totals) {
     </div>
     <div class="kcal-track"><div class="fill ${kcalOver ? 'over' : ''}" style="width:${kcalPct}%"></div></div>
     <div class="macro-grid">${macroCell('Eiwit', totals.p, g.p, 'p')}${macroCell('Koolh.', totals.c, g.c, 'c')}${macroCell('Vet', totals.f, g.f, 'f')}</div>`;
+}
+
+function fmt1(n) {
+  return Number(n).toFixed(1).replace('.', ',');
 }
 
 // ---- Maaltijd-secties -----------------------------------------------------
@@ -233,7 +241,7 @@ function renderAddList(dayN, cat, prefill = null) {
     // deelstring), daarbinnen op gebruik (vaak/recent) en dan naam. Zo komt het
     // product dat Peter waarschijnlijk bedoelt bovenaan i.p.v. puur alfabetisch.
     products = products
-      .map(p => ({ p, rank: matchRank(p.name, q) }))
+      .map(p => ({ p, rank: productMatchRank(p, q) }))
       .filter(x => x.rank >= 0)
       .sort((a, b) =>
         a.rank - b.rank
@@ -265,6 +273,7 @@ function renderAddList(dayN, cat, prefill = null) {
       <div class="food-info">
         <div class="food-name">${escapeHtml(p.name)}</div>
         <div class="food-macros">${Math.round(p.kcalPer100g)} kcal · <b>P${round1(p.pPer100g)}</b> C${round1(p.cPer100g)} F${round1(p.fPer100g)} <span class="per">/100g</span></div>
+        ${productMetaHtml(p)}
       </div>
       <span class="prod-add">+</span>
     </div>`).join('');
@@ -304,6 +313,11 @@ function renderNewForm(list, dayN, cat, prefill = {}) {
         <input type="text" id="npUnitName" placeholder="naam eenheid">
         <input type="number" inputmode="decimal" id="npUnitGrams" placeholder="gram per stuk">
       </div>
+      <label class="opt">Optionele labelgegevens — handmatig overnemen van verpakking</label>
+      <div class="grid2">
+        <input type="text" id="npBarcode" inputmode="numeric" placeholder="barcode">
+        <input type="text" id="npLabelText" placeholder="label/bron">
+      </div>
       <button class="btn-primary" id="npSave">Aanmaken & toevoegen</button>
     </div>`;
   if (!prefill.name) document.getElementById('npName').focus();
@@ -332,7 +346,9 @@ function renderNewForm(list, dayN, cat, prefill = {}) {
       cPer100g: +document.getElementById('npC').value || 0,
       fPer100g: +document.getElementById('npF').value || 0,
       unitName: unitName && unitGrams ? unitName : null,
-      unitGrams: unitName && unitGrams ? unitGrams : null
+      unitGrams: unitName && unitGrams ? unitGrams : null,
+      barcode: document.getElementById('npBarcode').value,
+      labelText: document.getElementById('npLabelText').value
     });
     openPortion(dayN, cat, p, {});
   };
@@ -479,11 +495,12 @@ function openTemplatePicker(dayN, cat) {
     <div class="sheet-head"><h3>Template gebruiken</h3><button class="sheet-close" id="sheetClose">✕</button></div>
     <div class="sheet-list">${templates.map(t => {
       let kcal = 0;
+      const version = templateVersionInfo(t).label;
       t.items.forEach(it => { const p = getProduct(it.productId); if (p) kcal += macrosFor(p, it.grams).kcal; });
       return `<div class="prod-row" data-tpl="${t.id}">
         <div class="food-info">
-          <div class="food-name">${escapeHtml(t.name)}</div>
-          <div class="food-macros">${t.items.length} producten · ${Math.round(kcal)} kcal</div>
+          <div class="food-name">${escapeHtml(t.name)}${version ? ` <span class="tpl-version">${version}</span>` : ''}</div>
+          <div class="food-macros">${t.items.length} producten · ${Math.round(kcal)} kcal${t.previousTemplateId ? ' · vorige versie bewaard' : ''}</div>
         </div>
         <span class="prod-add">+</span>
       </div>`;
@@ -522,7 +539,7 @@ function renderLibList() {
   if (!list) return;
   const q = searchQuery.trim().toLowerCase();
   const products = visibleProducts()
-    .filter(p => !q || p.name.toLowerCase().includes(q))
+    .filter(p => !q || productMatchRank(p, q) >= 0)
     .sort((a, b) => a.name.localeCompare(b.name, 'nl'));
 
   if (!products.length) { list.innerHTML = `<div class="sheet-empty">Geen producten.</div>`; return; }
@@ -532,6 +549,7 @@ function renderLibList() {
       <div class="food-info">
         <div class="food-name">${escapeHtml(p.name)} ${p.seed ? '<span class="badge">seed</span>' : ''}</div>
         <div class="food-macros">${Math.round(p.kcalPer100g)} kcal · P${round1(p.pPer100g)} C${round1(p.cPer100g)} F${round1(p.fPer100g)} /100g</div>
+        ${productMetaHtml(p)}
       </div>
       <div class="lib-actions">
         <button class="fav ${p.isFavorite ? 'on' : ''}" data-fav="${p.id}" aria-label="Favoriet">★</button>
@@ -579,6 +597,11 @@ function openProductEditor(product, prefill = null) {
         <input type="text" id="epUnitName" value="${escapeAttr(p.unitName || '')}" placeholder="naam eenheid">
         <input type="number" inputmode="decimal" id="epUnitGrams" value="${p.unitGrams ?? ''}" placeholder="gram per stuk">
       </div>
+      <label class="opt">Optionele labelgegevens — handmatig overnemen van verpakking</label>
+      <div class="grid2">
+        <input type="text" id="epBarcode" inputmode="numeric" value="${escapeAttr(p.barcode || '')}" placeholder="barcode">
+        <input type="text" id="epLabelText" value="${escapeAttr(p.labelText || '')}" placeholder="label/bron">
+      </div>
       <button class="btn-primary" id="epSave">${product ? 'Opslaan' : 'Aanmaken'}</button>
     </div>`;
   document.getElementById('sheetClose').onclick = closeSheet;
@@ -609,7 +632,9 @@ function openProductEditor(product, prefill = null) {
       cPer100g: +document.getElementById('epC').value || 0,
       fPer100g: +document.getElementById('epF').value || 0,
       unitName: unitName && unitGrams ? unitName : null,
-      unitGrams: unitName && unitGrams ? unitGrams : null
+      unitGrams: unitName && unitGrams ? unitGrams : null,
+      barcode: document.getElementById('epBarcode').value,
+      labelText: document.getElementById('epLabelText').value
     };
     if (product) updateProduct(product.id, fields);
     else createProduct(fields);
@@ -622,14 +647,16 @@ export function openTemplatesManager() {
   openSheet();
   const templates = visibleTemplates();
   const labelOf = (k) => MEAL_CATEGORIES.find(c => c.key === k)?.label || k;
+  const analytics = templateAnalytics();
   sheetBody().innerHTML = `
     <div class="sheet-grip"></div>
     <div class="sheet-head"><h3>Templates</h3><button class="sheet-close" id="sheetClose">✕</button></div>
+    ${templates.length ? `<div class="tpl-analytics">${analytics.usedTemplates}/${analytics.totalTemplates} gebruikt · ${analytics.totalUses}× toegepast</div>` : ''}
     <div class="sheet-list">${templates.length ? templates.map(t => `
       <div class="lib-row" data-tid="${t.id}">
         <div class="food-info">
-          <div class="food-name">${escapeHtml(t.name)}</div>
-          <div class="food-macros">${labelOf(t.category)} · ${t.items.length} producten</div>
+          <div class="food-name">${escapeHtml(t.name)}${templateVersionInfo(t).label ? ` <span class="tpl-version">${templateVersionInfo(t).label}</span>` : ''}</div>
+          <div class="food-macros">${labelOf(t.category)} · ${t.items.length} producten${t.previousTemplateId ? ' · vorige versie bewaard' : ''}${templateUsageText(t)}</div>
         </div>
         <div class="lib-actions"><button data-deltpl="${t.id}" aria-label="Verwijder">✕</button></div>
       </div>`).join('') : '<div class="sheet-empty">Nog geen templates. Maak ze via het ⋯-menu bij een maaltijd.</div>'}</div>`;
@@ -778,18 +805,13 @@ function productFromFields(f) {
 
 function clamp01(x) { return Number.isFinite(x) ? Math.min(1, Math.max(0, x)) : 0; }
 
-// Matchkwaliteit van een productnaam tegen query `q` (lowercase). Lager = beter;
-// -1 = geen match. Gebruikt door de gerankte productzoekfunctie (#28).
-function matchRank(name, q) {
-  const n = String(name).toLowerCase();
-  if (n === q) return 0;
-  if (n.startsWith(q)) return 1;
-  if (n.split(/[^a-z0-9]+/).some(w => w && w.startsWith(q))) return 2;
-  if (n.includes(q)) return 3;
-  return -1;
-}
-
 // ---- Helpers --------------------------------------------------------------
+
+function productMetaHtml(product) {
+  const parts = productMetaParts(product);
+  if (!parts.length) return '';
+  return `<div class="food-meta">${parts.map(escapeHtml).join(' · ')}</div>`;
+}
 
 function fmtGrams(product, grams) {
   if (product?.unitName && product.unitGrams) {
@@ -801,6 +823,12 @@ function fmtGrams(product, grams) {
     }
   }
   return `${Math.round(grams)}g`;
+}
+
+function templateUsageText(template) {
+  const count = Number(template?.useCount) || 0;
+  if (!count) return '';
+  return ` · ${count}× gebruikt`;
 }
 
 function round1(x) {
