@@ -4,6 +4,14 @@ Dit bestand definieert het formaat voor toekomstige releases. Vul geen fictieve 
 
 ## Unreleased
 
+Macro data quality score (#57 — roadmap-doel 36).
+
+### Added
+- Nieuwe pure helper `productMacroQuality(product)` met score, tier, label en redenen.
+- Productrijen tonen compacte macrokwaliteit: `Sterk`, `Indicatief` of `Laag`.
+- Score beloont complete plausibele macrodata en bronvertrouwen, en markeert ontbrekende/onwaarschijnlijke macro's.
+- Repeatable Node-test `tests/productMacroQuality.test.mjs`.
+
 Frequent meal quick-add (#55 — roadmap-doel 32).
 
 ### Added
@@ -40,6 +48,10 @@ Barcode/label handmatige invoer (#47 — roadmap-doel 29).
 - `CACHE_VERSION` `shred-v28` → `shred-v29` (`css/app.css`, `js/nutrition.js`, `js/ui/food.js` en `service-worker.js` gewijzigd).
 
 ### Verification
+- `node --test tests/productMacroQuality.test.mjs`
+- `node --check js/nutrition.js`
+- `node --check js/ui/food.js`
+- `node --check tests/productMacroQuality.test.mjs`
 - `node --test tests/frequentMealProducts.test.mjs`
 - `node --check js/nutrition.js`
 - `node --check js/ui/food.js`

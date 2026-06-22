@@ -135,6 +135,13 @@ Het voorstel toont per item een confidence-pill (alleen bij twijfel: "indicatief
 
 `/api/products/lookup` schat macro's per 100g voor nieuwe producten. De output is een voorstel, geen automatische waarheid.
 
+`productMacroQuality(product)` geeft elk product een deterministische
+macrokwaliteitsscore (`0-100`) met tier `high`, `medium` of `low`. De score
+combineert bronvertrouwen (`seed`, handmatig, AI-schatting, legacy),
+volledigheid, plausibele per-100g macro's en kcal/macro-consistentie.
+Productrijen tonen dit compact als `Sterk`, `Indicatief` of `Laag`, zodat
+zwakke macrodata zichtbaar is voordat ze analyses beïnvloedt.
+
 Regels:
 
 - preview verplicht;
