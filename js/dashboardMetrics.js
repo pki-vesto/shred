@@ -244,6 +244,42 @@ function finalizeNutritionGroup(group) {
   };
 }
 
+export function calorieCyclingTargets(goals = state.goals, delta = 150) {
+  const baseKcal = Math.max(0, Math.round(Number(goals?.kcal) || 0));
+  const protein = Math.max(0, Math.round(Number(goals?.p) || 0));
+  const trainingDays = 5;
+  const restDays = 2;
+  const minRestKcal = Math.max(1200, Math.round(baseKcal * 0.7));
+  const maxDelta = Math.max(0, Math.floor((baseKcal - minRestKcal) * restDays / trainingDays));
+  const trainingDelta = Math.max(0, Math.min(Math.round(Number(delta) || 0), maxDelta));
+  const restDelta = Math.round(trainingDelta * trainingDays / restDays);
+  const trainingKcal = baseKcal + trainingDelta;
+  const restKcal = baseKcal - restDelta;
+
+  return {
+    baseKcal,
+    trainingDays,
+    restDays,
+    training: macroTargetsFor(trainingKcal, protein),
+    rest: macroTargetsFor(restKcal, protein),
+    weeklyAverageKcal: Math.round(((trainingKcal * trainingDays) + (restKcal * restDays)) / (trainingDays + restDays)),
+    delta: trainingDelta,
+    restDelta,
+    note: trainingDelta
+      ? 'Training hoger in koolhydraten, rust lager; eiwit blijft gelijk en weekgemiddelde blijft rond doel.'
+      : 'Calorie cycling staat op nul omdat het huidige kcal-doel te laag is voor een veilige rustdag-clamp.'
+  };
+}
+
+function macroTargetsFor(kcal, protein) {
+  const proteinKcal = protein * 4;
+  const remaining = Math.max(0, kcal - proteinKcal);
+  const preferredFat = Math.max(35, Math.round((remaining * 0.3) / 9));
+  const fat = remaining ? Math.min(preferredFat, Math.floor(remaining / 9)) : 0;
+  const carbs = Math.max(0, Math.round((remaining - fat * 9) / 4));
+  return { kcal, p: protein, c: carbs, f: fat };
+}
+
 // Calorie-trend vs gewichtstrend (#15 / roadmap-doel 45). Pure, deterministische
 // helper die het 14-daags caloriegemiddelde naast de EWMA-gewichtstrend zet en
 // een niet-causale duiding teruggeeft. Geen TDEE-claim, geen "X veroorzaakt Y":
