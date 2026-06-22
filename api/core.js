@@ -19,16 +19,16 @@ import Database from 'better-sqlite3';
 import { db } from './db.js';   // shred.db connection — read-only use here
 
 // ── Canonical aggregation logic (mirror of scripts/lib/aggregate.mjs) ────────
-const CATEGORY_KEYS = ['ontbijt', 'lunch', 'snack', 'diner'];
-const round2 = (x) => Math.round((Number(x) || 0) * 100) / 100;
-const epochToIso = (ms) => { const n = Number(ms); return Number.isFinite(n) ? new Date(n).toISOString() : null; };
+export const CATEGORY_KEYS = ['ontbijt', 'lunch', 'snack', 'diner'];
+export const round2 = (x) => Math.round((Number(x) || 0) * 100) / 100;
+export const epochToIso = (ms) => { const n = Number(ms); return Number.isFinite(n) ? new Date(n).toISOString() : null; };
 
-function dayToDate(startDate, dayN) {
+export function dayToDate(startDate, dayN) {
   const [y, m, d] = String(startDate).split('-').map(Number);
   const base = Date.UTC(y, m - 1, d);
   return new Date(base + (Number(dayN) - 1) * 86400000).toISOString().slice(0, 10);
 }
-function nutritionTotals(foodsValue, getProduct) {
+export function nutritionTotals(foodsValue, getProduct) {
   const t = { kcal: 0, p: 0, c: 0, f: 0, itemCount: 0 };
   for (const cat of CATEGORY_KEYS) {
     for (const it of (foodsValue?.[cat] || [])) {
@@ -44,21 +44,21 @@ function nutritionTotals(foodsValue, getProduct) {
   }
   return t;
 }
-function setsVolume(setsArrays) {
+export function setsVolume(setsArrays) {
   let vol = 0;
   for (const arr of setsArrays) for (const s of (arr || [])) {
     vol += (parseFloat(s.w) || 0) * (parseInt(s.r, 10) || 0);
   }
   return vol;
 }
-const extId = {
+export const extId = {
   weight: (day) => `weights:${day}`,
   foodsDay: (date) => `foods-day:${date}`,
   session: (date) => `session:${date}`,
   measurement: (date, field) => `measurements:${date}:${field}`,
   cardio: (date) => `cardio:${date}`
 };
-const UNITS = {
+export const UNITS = {
   'body.weight': 'kg', 'nutrition.calories': 'kcal', 'nutrition.protein': 'g',
   'nutrition.carbs': 'g', 'nutrition.fat': 'g', 'fitness.session_volume': 'kg',
   'body.waist': 'cm', 'body.hip': 'cm', 'body.chest': 'cm', 'body.arm': 'cm', 'body.thigh': 'cm',
@@ -70,7 +70,7 @@ const MEASURE_METRICS = [
   ['waist', 'body.waist'], ['hip', 'body.hip'], ['chest', 'body.chest'],
   ['arm', 'body.arm'], ['thigh', 'body.thigh']
 ];
-const DERIVED = {
+export const DERIVED = {
   nutrition: { derived_from: 'shred.foods', aggregation_window: 'day', formula_version: 'nutrition_day_v1' },
   volume:    { derived_from: 'shred.sets',  aggregation_window: 'day', formula_version: 'session_volume_day_v1' }
 };

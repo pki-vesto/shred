@@ -221,5 +221,5 @@ Trackbare status van de 200 doelen uit [18_PRODUCT_ROADMAP.md](18_PRODUCT_ROADMA
 - [ ] 200 Digital Fitness Twin milestone review
 
 ## Nieuw ontdekt werk (buiten de 200)
-- [ ] N1 `MASTER_CONTEXT`-aggregaat copy van nutrition-aggregatie in `api/core.js` blijft handmatig synchroon met `health-core/scripts/lib/aggregate.mjs` — overweeg een gedeelde bron of een parity-test.
+- [x] N1 `MASTER_CONTEXT`-aggregaat copy van nutrition-aggregatie in `api/core.js` blijft handmatig synchroon met `health-core/scripts/lib/aggregate.mjs` — `api/test-aggregate-parity.mjs` borgt de gedeelde formules tegen een Health Core-snapshot en draait via `npm test`.
 - [ ] N2 Frontend heeft geen testrunner; logica wordt getest via ad-hoc mock-harnesses. Overweeg een lichte node-testopzet voor `*.metrics.js`.

@@ -4,6 +4,9 @@ Dit bestand definieert het formaat voor toekomstige releases. Vul geen fictieve 
 
 ## Unreleased
 
+- N1 Aggregatie-parity: `api/core.js` exporteert de gedeelde Shred/Health Core-aggregatiehelpers expliciet en `api/test-aggregate-parity.mjs` vergelijkt nutrition/session-formules, units, external IDs en metadata tegen een Health Core-snapshot.
+- Testcommand: `npm --prefix api test` draait nu aggregate-parity, Health Core dual-write en sync-contract tests.
+
 Calorie cycling targets (#59 — roadmap-doel 37).
 
 ### Added
