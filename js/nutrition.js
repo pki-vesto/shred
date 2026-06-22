@@ -25,6 +25,8 @@ function blankProduct(over = {}) {
     name: '',
     kcalPer100g: 0, pPer100g: 0, cPer100g: 0, fPer100g: 0,
     unitName: null, unitGrams: null,   // optionele eenheid (bv. ei = 50g)
+    barcode: null,                      // handmatig overgenomen streepjescode
+    labelText: null,                    // korte label-/bronnotitie van verpakking
     isFavorite: false,
     useCount: 0,
     lastUsedAt: 0,
@@ -40,7 +42,7 @@ function blankProduct(over = {}) {
 }
 
 export function createProduct(fields) {
-  const p = blankProduct(fields);
+  const p = blankProduct(normalizeProductFields(fields));
   state.products[p.id] = p;
   mutate('product', p.id);
   return p;
@@ -49,7 +51,7 @@ export function createProduct(fields) {
 export function updateProduct(id, fields) {
   const p = state.products[id];
   if (!p) return null;
-  Object.assign(p, fields, { updatedAt: Date.now() });
+  Object.assign(p, normalizeProductFields(fields), { updatedAt: Date.now() });
   mutate('product', id);
   return p;
 }
@@ -99,6 +101,54 @@ export function visibleProducts() {
 // het filteren voor de keuzelijsten.
 export function getProduct(id) {
   return state.products[id] || null;
+}
+
+export function normalizeProductFields(fields = {}) {
+  const out = { ...fields };
+  if ('name' in out) out.name = String(out.name || '').trim();
+  if ('barcode' in out) out.barcode = normalizeBarcode(out.barcode);
+  if ('labelText' in out) out.labelText = normalizeLabelText(out.labelText);
+  return out;
+}
+
+export function normalizeBarcode(value) {
+  const v = String(value || '').trim().replace(/[\s-]+/g, '');
+  return v || null;
+}
+
+export function normalizeLabelText(value) {
+  const v = String(value || '').replace(/\s+/g, ' ').trim();
+  return v || null;
+}
+
+export function productMetaParts(product) {
+  const parts = [];
+  if (product?.barcode) parts.push(`barcode ${product.barcode}`);
+  if (product?.labelText) parts.push(product.labelText);
+  return parts;
+}
+
+export function productMatchRank(product, query) {
+  const raw = String(query || '');
+  const q = raw.toLowerCase().trim();
+  if (!q) return 0;
+  const barcodeQuery = (normalizeBarcode(raw) || q).toLowerCase();
+  const ranks = [
+    textMatchRank(product?.name, q),
+    textMatchRank(product?.barcode, barcodeQuery),
+    textMatchRank(product?.labelText, q)
+  ].filter(rank => rank >= 0);
+  return ranks.length ? Math.min(...ranks) : -1;
+}
+
+function textMatchRank(value, q) {
+  const text = String(value || '').toLowerCase();
+  if (!text) return -1;
+  if (text === q) return 0;
+  if (text.startsWith(q)) return 1;
+  if (text.split(/[^a-z0-9]+/).some(w => w && w.startsWith(q))) return 2;
+  if (text.includes(q)) return 3;
+  return -1;
 }
 
 // ---- Macro's -------------------------------------------------------------
@@ -183,18 +233,32 @@ export function removeLogItem(dayN, cat, index) {
 
 export function visibleTemplates(category) {
   return Object.values(state.mealTemplates)
-    .filter(t => !t.deleted && (!category || t.category === category));
+    .filter(t => !t.deleted && (!category || t.category === category))
+    .sort((a, b) =>
+      a.name.localeCompare(b.name, 'nl')
+      || templateVersionOf(b) - templateVersionOf(a)
+      || (b.createdAt || 0) - (a.createdAt || 0));
 }
 
 export function saveTemplate(name, category, items) {
   const now = Date.now();
+  const cleanName = name.trim();
+  const recipeKey = templateRecipeKey(category, cleanName);
+  const previous = Object.values(state.mealTemplates)
+    .filter(t => templateRecipeKey(t.category, t.name) === recipeKey || t.recipeKey === recipeKey)
+    .sort((a, b) => templateVersionOf(b) - templateVersionOf(a) || (b.createdAt || 0) - (a.createdAt || 0));
+  const latest = previous[0] || null;
+  const version = latest ? templateVersionOf(latest) + 1 : 1;
   const t = {
     id: uuid(),
-    name: name.trim(),
+    name: cleanName,
     category,
     items: items.map(it => ({ productId: it.productId, grams: it.grams })),
     useCount: 0,
     lastUsedAt: 0,
+    recipeKey,
+    version,
+    previousTemplateId: latest?.id || null,
     deleted: false,
     createdAt: now,
     updatedAt: now
@@ -210,6 +274,27 @@ export function deleteTemplate(id) {
   t.deleted = true;
   t.updatedAt = Date.now();
   mutate('template', id);
+}
+
+export function templateRecipeKey(category, name) {
+  return `${category || 'meal'}:${slugify(name)}`;
+}
+
+export function templateVersionOf(template) {
+  return Math.max(1, Number(template?.version) || 1);
+}
+
+export function templateVersionInfo(template, allTemplates = state.mealTemplates) {
+  const recipeKey = template?.recipeKey || templateRecipeKey(template?.category, template?.name);
+  const versions = Object.values(allTemplates || {})
+    .filter(t => !t.deleted && (t.recipeKey === recipeKey || templateRecipeKey(t.category, t.name) === recipeKey));
+  const total = versions.length;
+  const version = templateVersionOf(template);
+  return {
+    version,
+    total,
+    label: total > 1 || version > 1 ? `v${version}` : ''
+  };
 }
 
 // Voeg alle items van een template toe aan een maaltijd-sectie.
