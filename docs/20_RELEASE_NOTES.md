@@ -4,6 +4,22 @@ Dit bestand definieert het formaat voor toekomstige releases. Vul geen fictieve 
 
 ## Unreleased
 
+Barcode/label handmatige invoer (#47 — roadmap-doel 29).
+
+### Added
+- Optionele barcode- en label/bronvelden bij product aanmaken en bewerken.
+- Productzoek matcht nu ook op barcode en labeltekst naast productnaam.
+- Productrijen tonen compacte labelmetadata wanneer die aanwezig is.
+- Repeatable Node-test `tests/nutritionProductMetadata.test.mjs`.
+
+### Operations
+- `CACHE_VERSION` `shred-v28` → `shred-v29` (`css/app.css`, `js/nutrition.js`, `js/ui/food.js` en `service-worker.js` gewijzigd).
+
+### Verification
+- `node --test tests/nutritionProductMetadata.test.mjs`
+- `node --check js/nutrition.js`
+- `node --check js/ui/food.js`
+
 Missed-session recovery advies (#45 — roadmap-doel 19).
 
 ### Added

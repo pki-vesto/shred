@@ -2,7 +2,7 @@
 
 Trackbare status van de 200 doelen uit [18_PRODUCT_ROADMAP.md](18_PRODUCT_ROADMAP.md). De roadmap is de canonieke *lijst*; dit bestand houdt de *status* bij. `[x]` = klaar (geïmplementeerd + geverifieerd), `[ ]` = open. Markeer hier af zodra werk gemerged/gedeployed is en voeg nieuw ontdekt werk onderaan toe.
 
-**Stand: 58 klaar · 142 open** (laatst bijgewerkt 2026-06-18, t/m v1.12.0 + unreleased calorie cycling + missed-session advies + backlogreconciliatie favoriete swaps).
+**Stand: 59 klaar · 141 open** (laatst bijgewerkt 2026-06-18, t/m v1.12.0 + unreleased calorie cycling + missed-session advies + barcode/label velden + backlogreconciliatie favoriete swaps).
 
 ## Training (1-25) — 18/25
 - [x] 1 Behoud 90-dagen programma
@@ -31,11 +31,11 @@ Trackbare status van de 200 doelen uit [18_PRODUCT_ROADMAP.md](18_PRODUCT_ROADMA
 - [ ] 24 Programma templates exporteerbaar
 - [ ] 25 Training end-of-phase report
 
-## Nutrition (26-50) — 8/25
+## Nutrition (26-50) — 9/25
 - [x] 26 Productgebaseerde food logs
 - [x] 27 Historical product macro integrity
 - [x] 28 Product search ranking
-- [ ] 29 Barcode/label handmatige invoer
+- [x] 29 Barcode/label handmatige invoer
 - [ ] 30 Recipe versioning
 - [ ] 31 Meal template analytics
 - [ ] 32 Frequent meal quick-add
