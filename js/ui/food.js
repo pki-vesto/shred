@@ -12,7 +12,7 @@ import {
   visibleProducts, getProduct, toggleFavorite, createProduct, updateProduct,
   removeProduct, addLogItem, updateLogItem, removeLogItem,
   visibleTemplates, saveTemplate, applyTemplate, deleteTemplate,
-  productMatchRank, productMetaParts
+  templateVersionInfo, productMatchRank, productMetaParts
 } from '../nutrition.js';
 
 // Welke maaltijd-secties dichtgeklapt zijn (per categorie-key).
@@ -472,11 +472,12 @@ function openTemplatePicker(dayN, cat) {
     <div class="sheet-head"><h3>Template gebruiken</h3><button class="sheet-close" id="sheetClose">✕</button></div>
     <div class="sheet-list">${templates.map(t => {
       let kcal = 0;
+      const version = templateVersionInfo(t).label;
       t.items.forEach(it => { const p = getProduct(it.productId); if (p) kcal += macrosFor(p, it.grams).kcal; });
       return `<div class="prod-row" data-tpl="${t.id}">
         <div class="food-info">
-          <div class="food-name">${escapeHtml(t.name)}</div>
-          <div class="food-macros">${t.items.length} producten · ${Math.round(kcal)} kcal</div>
+          <div class="food-name">${escapeHtml(t.name)}${version ? ` <span class="tpl-version">${version}</span>` : ''}</div>
+          <div class="food-macros">${t.items.length} producten · ${Math.round(kcal)} kcal${t.previousTemplateId ? ' · vorige versie bewaard' : ''}</div>
         </div>
         <span class="prod-add">+</span>
       </div>`;
@@ -629,8 +630,8 @@ export function openTemplatesManager() {
     <div class="sheet-list">${templates.length ? templates.map(t => `
       <div class="lib-row" data-tid="${t.id}">
         <div class="food-info">
-          <div class="food-name">${escapeHtml(t.name)}</div>
-          <div class="food-macros">${labelOf(t.category)} · ${t.items.length} producten</div>
+          <div class="food-name">${escapeHtml(t.name)}${templateVersionInfo(t).label ? ` <span class="tpl-version">${templateVersionInfo(t).label}</span>` : ''}</div>
+          <div class="food-macros">${labelOf(t.category)} · ${t.items.length} producten${t.previousTemplateId ? ' · vorige versie bewaard' : ''}</div>
         </div>
         <div class="lib-actions"><button data-deltpl="${t.id}" aria-label="Verwijder">✕</button></div>
       </div>`).join('') : '<div class="sheet-empty">Nog geen templates. Maak ze via het ⋯-menu bij een maaltijd.</div>'}</div>`;

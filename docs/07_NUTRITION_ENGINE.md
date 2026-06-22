@@ -49,7 +49,18 @@ Huidige meal templates bewaren:
 - lijst van productId + grams;
 - deleted tombstone.
 
-Toekomstige recepten kunnen berekend worden als samengestelde producten, maar alleen als:
+Templates dragen ook receptachtige versie-metadata:
+
+- `recipeKey`: stabiele sleutel op basis van maaltijdcategorie + template-naam;
+- `version`: oplopend versienummer binnen dezelfde `recipeKey`;
+- `previousTemplateId`: link naar de vorige versie.
+
+Wanneer dezelfde naam binnen dezelfde maaltijdcategorie opnieuw wordt opgeslagen,
+blijft de oude compositie bestaan en wordt een nieuwe versie aangemaakt. Het
+kiezen van een template past altijd exact de geselecteerde historische versie
+toe. Dit geeft recipe-versioning zonder een nieuw sync-type of backend-schema.
+
+Toekomstige samengestelde producten kunnen hierop voortbouwen, maar alleen als:
 
 - macro's reproduceerbaar zijn;
 - wijzigingen historisch versioned zijn;

@@ -233,16 +233,30 @@ export function removeLogItem(dayN, cat, index) {
 
 export function visibleTemplates(category) {
   return Object.values(state.mealTemplates)
-    .filter(t => !t.deleted && (!category || t.category === category));
+    .filter(t => !t.deleted && (!category || t.category === category))
+    .sort((a, b) =>
+      a.name.localeCompare(b.name, 'nl')
+      || templateVersionOf(b) - templateVersionOf(a)
+      || (b.createdAt || 0) - (a.createdAt || 0));
 }
 
 export function saveTemplate(name, category, items) {
   const now = Date.now();
+  const cleanName = name.trim();
+  const recipeKey = templateRecipeKey(category, cleanName);
+  const previous = Object.values(state.mealTemplates)
+    .filter(t => templateRecipeKey(t.category, t.name) === recipeKey || t.recipeKey === recipeKey)
+    .sort((a, b) => templateVersionOf(b) - templateVersionOf(a) || (b.createdAt || 0) - (a.createdAt || 0));
+  const latest = previous[0] || null;
+  const version = latest ? templateVersionOf(latest) + 1 : 1;
   const t = {
     id: uuid(),
-    name: name.trim(),
+    name: cleanName,
     category,
     items: items.map(it => ({ productId: it.productId, grams: it.grams })),
+    recipeKey,
+    version,
+    previousTemplateId: latest?.id || null,
     deleted: false,
     createdAt: now,
     updatedAt: now
@@ -258,6 +272,27 @@ export function deleteTemplate(id) {
   t.deleted = true;
   t.updatedAt = Date.now();
   mutate('template', id);
+}
+
+export function templateRecipeKey(category, name) {
+  return `${category || 'meal'}:${slugify(name)}`;
+}
+
+export function templateVersionOf(template) {
+  return Math.max(1, Number(template?.version) || 1);
+}
+
+export function templateVersionInfo(template, allTemplates = state.mealTemplates) {
+  const recipeKey = template?.recipeKey || templateRecipeKey(template?.category, template?.name);
+  const versions = Object.values(allTemplates || {})
+    .filter(t => !t.deleted && (t.recipeKey === recipeKey || templateRecipeKey(t.category, t.name) === recipeKey));
+  const total = versions.length;
+  const version = templateVersionOf(template);
+  return {
+    version,
+    total,
+    label: total > 1 || version > 1 ? `v${version}` : ''
+  };
 }
 
 // Voeg alle items van een template toe aan een maaltijd-sectie.

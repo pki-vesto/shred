@@ -4,6 +4,14 @@ Dit bestand definieert het formaat voor toekomstige releases. Vul geen fictieve 
 
 ## Unreleased
 
+Recipe/template versioning (#51 — roadmap-doel 30).
+
+### Added
+- Meal templates krijgen additieve versie-metadata (`recipeKey`, `version`, `previousTemplateId`) wanneer dezelfde naam/categorie opnieuw wordt opgeslagen.
+- Template picker en templatebeheer tonen `vN` wanneer meerdere versies bestaan.
+- Geselecteerde historische templateversies blijven exact toepasbaar.
+- Repeatable Node-test `tests/templateVersioning.test.mjs`.
+
 Barcode/label handmatige invoer (#47 — roadmap-doel 29).
 
 ### Added
@@ -16,6 +24,10 @@ Barcode/label handmatige invoer (#47 — roadmap-doel 29).
 - `CACHE_VERSION` `shred-v28` → `shred-v29` (`css/app.css`, `js/nutrition.js`, `js/ui/food.js` en `service-worker.js` gewijzigd).
 
 ### Verification
+- `node --test tests/templateVersioning.test.mjs`
+- `node --check js/nutrition.js`
+- `node --check js/ui/food.js`
+- `node --check tests/templateVersioning.test.mjs`
 - `node --test tests/nutritionProductMetadata.test.mjs`
 - `node --check js/nutrition.js`
 - `node --check js/ui/food.js`
