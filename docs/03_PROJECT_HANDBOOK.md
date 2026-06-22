@@ -29,7 +29,7 @@ Huidige geïmplementeerde hoofdfeatures:
 - Oefeninghistorie per concrete `exerciseId`.
 - Setlogging met gewicht, reps, RIR-select en PR-detectie.
 - Dagcompletion en notities.
-- Voeding met productbibliotheek, macros per 100g, optionele barcode/labelmetadata, maaltijdcategorieën en versioned meal templates; gerankte productzoek (matchkwaliteit + gebruik + barcode/label).
+- Voeding met productbibliotheek, macros per 100g, optionele barcode/labelmetadata, maaltijdcategorieën en versioned meal templates met usage analytics; gerankte productzoek (matchkwaliteit + gebruik + barcode/label).
 - Product lookup via Claude Haiku met preview en confidence-indicator.
 - Voice meal logging via browser mic, Whisper en Claude, met confidence-pills en per-100g check voor nieuwe producten.
 - Offline voice queue in IndexedDB.

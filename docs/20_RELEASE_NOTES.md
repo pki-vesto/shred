@@ -4,6 +4,14 @@ Dit bestand definieert het formaat voor toekomstige releases. Vul geen fictieve 
 
 ## Unreleased
 
+Meal template analytics (#53 — roadmap-doel 31).
+
+### Added
+- Templates krijgen gebruiksmetadata (`useCount`, `lastUsedAt`) wanneer ze worden toegepast.
+- Nieuwe pure helper `templateAnalytics(category?, limit?)` voor totalen en top templates.
+- Templatebeheer toont compacte usage-samenvatting en per-template gebruiksteller.
+- Repeatable Node-test `tests/templateAnalytics.test.mjs`.
+
 Recipe/template versioning (#51 — roadmap-doel 30).
 
 ### Added
@@ -24,6 +32,10 @@ Barcode/label handmatige invoer (#47 — roadmap-doel 29).
 - `CACHE_VERSION` `shred-v28` → `shred-v29` (`css/app.css`, `js/nutrition.js`, `js/ui/food.js` en `service-worker.js` gewijzigd).
 
 ### Verification
+- `node --test tests/templateAnalytics.test.mjs`
+- `node --check js/nutrition.js`
+- `node --check js/ui/food.js`
+- `node --check tests/templateAnalytics.test.mjs`
 - `node --test tests/templateVersioning.test.mjs`
 - `node --check js/nutrition.js`
 - `node --check js/ui/food.js`
