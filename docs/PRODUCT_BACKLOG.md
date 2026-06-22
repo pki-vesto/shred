@@ -2,9 +2,9 @@
 
 Trackbare status van de 200 doelen uit [18_PRODUCT_ROADMAP.md](18_PRODUCT_ROADMAP.md). De roadmap is de canonieke *lijst*; dit bestand houdt de *status* bij. `[x]` = klaar (geïmplementeerd + geverifieerd), `[ ]` = open. Markeer hier af zodra werk gemerged/gedeployed is en voeg nieuw ontdekt werk onderaan toe.
 
-**Stand: 57 klaar · 143 open** (laatst bijgewerkt 2026-06-18, t/m v1.12.0 + unreleased templateversies).
+**Stand: 60 klaar · 140 open** (laatst bijgewerkt 2026-06-18, t/m v1.12.0 + unreleased calorie cycling + missed-session advies + barcode/label velden + templateversies + backlogreconciliatie favoriete swaps).
 
-## Training (1-25) — 16/25
+## Training (1-25) — 18/25
 - [x] 1 Behoud 90-dagen programma
 - [x] 2 Documenteer programma-entiteit
 - [x] 3 Stabiele exercise IDs
@@ -17,13 +17,13 @@ Trackbare status van de 200 doelen uit [18_PRODUCT_ROADMAP.md](18_PRODUCT_ROADMA
 - [x] 10 Suggested deload verklaarbaar
 - [x] 11 Kniebelasting-score per sessie
 - [x] 12 Swaps op knieveiligheid
-- [ ] 13 Favoriete swaps
+- [x] 13 Favoriete swaps
 - [x] 14 Equipment notes
 - [ ] 15 Bodyweight volume-equivalent
 - [x] 16 Cardio duration/intensity logging
 - [x] 17 Zone 2 hartslagcontext
 - [x] 18 Interval workout completion details
-- [ ] 19 Missed-session recovery advies
+- [x] 19 Missed-session recovery advies
 - [ ] 20 Training density
 - [ ] 21 Session readiness modifier
 - [ ] 22 Exercise progression recommendations
@@ -31,11 +31,11 @@ Trackbare status van de 200 doelen uit [18_PRODUCT_ROADMAP.md](18_PRODUCT_ROADMA
 - [ ] 24 Programma templates exporteerbaar
 - [ ] 25 Training end-of-phase report
 
-## Nutrition (26-50) — 8/25
+## Nutrition (26-50) — 10/25
 - [x] 26 Productgebaseerde food logs
 - [x] 27 Historical product macro integrity
 - [x] 28 Product search ranking
-- [ ] 29 Barcode/label handmatige invoer
+- [x] 29 Barcode/label handmatige invoer
 - [x] 30 Recipe versioning
 - [ ] 31 Meal template analytics
 - [ ] 32 Frequent meal quick-add
@@ -43,7 +43,7 @@ Trackbare status van de 200 doelen uit [18_PRODUCT_ROADMAP.md](18_PRODUCT_ROADMA
 - [x] 34 Pending voice proposals robuust
 - [x] 35 Confidence indicator AI lookup
 - [ ] 36 Macro data quality score
-- [ ] 37 Calorie cycling ontwerp
+- [x] 37 Calorie cycling ontwerp
 - [ ] 38 Protein per kg
 - [ ] 39 Fiber veld
 - [ ] 40 Hydration
@@ -221,5 +221,5 @@ Trackbare status van de 200 doelen uit [18_PRODUCT_ROADMAP.md](18_PRODUCT_ROADMA
 - [ ] 200 Digital Fitness Twin milestone review
 
 ## Nieuw ontdekt werk (buiten de 200)
-- [ ] N1 `MASTER_CONTEXT`-aggregaat copy van nutrition-aggregatie in `api/core.js` blijft handmatig synchroon met `health-core/scripts/lib/aggregate.mjs` — overweeg een gedeelde bron of een parity-test.
-- [ ] N2 Frontend heeft geen testrunner; logica wordt getest via ad-hoc mock-harnesses. Overweeg een lichte node-testopzet voor `*.metrics.js`.
+- [x] N1 `MASTER_CONTEXT`-aggregaat copy van nutrition-aggregatie in `api/core.js` blijft handmatig synchroon met `health-core/scripts/lib/aggregate.mjs` — `api/test-aggregate-parity.mjs` borgt de gedeelde formules tegen een Health Core-snapshot en draait via `npm --prefix api test`.
+- [x] N2 Frontend heeft geen testrunner; logica wordt getest via ad-hoc mock-harnesses. `npm test` draait nu `node --test` smoke-dekking voor `js/*Metrics.js`.

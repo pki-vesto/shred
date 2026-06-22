@@ -1,10 +1,18 @@
 import { state } from './state.js';
-import { dateForDay, dayIsComplete, todayNum, weekOf } from './helpers.js';
+import { TOTAL_DAYS, dateForDay, dayIsComplete, todayNum, weekOf } from './helpers.js';
 import { sessionFor } from './sessions.js';
 import { dayTotals } from './nutrition.js';
 import { weightMetrics } from './bodyMetrics.js';
 
 const TRAINING_DAYS_PER_WEEK = 5;
+
+export function proteinPerKg(goalP, metrics) {
+  const proteinGoal = Number(goalP);
+  const trendWeight = Number(metrics?.ewma);
+  if (!Number.isFinite(proteinGoal) || proteinGoal <= 0) return null;
+  if (!Number.isFinite(trendWeight) || trendWeight <= 0) return null;
+  return Math.round((proteinGoal / trendWeight) * 10) / 10;
+}
 
 export function currentWeekRange(day = todayNum()) {
   const week = weekOf(day);
@@ -34,6 +42,7 @@ export function weeklyMetrics(day = todayNum()) {
     : null;
   const weights = weightMetrics(state.weights);
   const missedTraining = missedTrainingDays(range.start, range.end);
+  const missedAdvice = missedSessionRecoveryAdvice(day);
 
   return {
     ...range,
@@ -47,6 +56,7 @@ export function weeklyMetrics(day = todayNum()) {
     avgProtein,
     weighIns: weights.data.length,
     missedTraining,
+    missedAdvice,
     weight: weights
   };
 }
@@ -131,7 +141,8 @@ export function weeklyReview(day = todayNum()) {
   }
   if (week.missedTraining.length) {
     const list = week.missedTraining.slice(-3).map(d => `dag ${d}`).join(', ');
-    items.push({ tone: 'warn', confidence: 'high', title: 'Gemiste training', text: `${list} niet voltooid. Houd de volgende sessie kort, maar sla de gewoonte niet over.` });
+    const advice = week.missedAdvice?.text || 'Houd de volgende sessie kort, maar sla de gewoonte niet over.';
+    items.push({ tone: 'warn', confidence: 'high', title: 'Gemiste training', text: `${list} niet voltooid. ${advice}` });
   }
 
   // Lichaam — op EWMA-trendgewicht (#49 body-deel van het rapport)
@@ -166,6 +177,7 @@ export function weeklyReview(day = todayNum()) {
 
 function buildRecommendation(week) {
   const w = week.weight;
+  if (week.missedAdvice) return week.missedAdvice.recommendation;
   if (week.daysElapsed >= 3 && week.completionPct < 0.6) return 'Focus deze week op consistentie: plan je eerstvolgende sessie nu in en houd hem kort.';
   if (week.avgProtein !== null && state.goals?.p && week.avgProtein < 0.8 * state.goals.p) return `Til je eiwit naar ~${state.goals.p} g/dag — voeg een eiwitbron toe aan je twee grootste maaltijden.`;
   if (w.plateauV2) return 'Plateau: trek de weekend-inname strakker of verlaag kcal licht (~100-150) en hermeet over 10 dagen.';
@@ -234,6 +246,42 @@ function finalizeNutritionGroup(group) {
     avgKcal: group.days ? group.kcalSum / group.days : null,
     avgProtein: group.days ? group.proteinSum / group.days : null
   };
+}
+
+export function calorieCyclingTargets(goals = state.goals, delta = 150) {
+  const baseKcal = Math.max(0, Math.round(Number(goals?.kcal) || 0));
+  const protein = Math.max(0, Math.round(Number(goals?.p) || 0));
+  const trainingDays = 5;
+  const restDays = 2;
+  const minRestKcal = Math.max(1200, Math.round(baseKcal * 0.7));
+  const maxDelta = Math.max(0, Math.floor((baseKcal - minRestKcal) * restDays / trainingDays));
+  const trainingDelta = Math.max(0, Math.min(Math.round(Number(delta) || 0), maxDelta));
+  const restDelta = Math.round(trainingDelta * trainingDays / restDays);
+  const trainingKcal = baseKcal + trainingDelta;
+  const restKcal = baseKcal - restDelta;
+
+  return {
+    baseKcal,
+    trainingDays,
+    restDays,
+    training: macroTargetsFor(trainingKcal, protein),
+    rest: macroTargetsFor(restKcal, protein),
+    weeklyAverageKcal: Math.round(((trainingKcal * trainingDays) + (restKcal * restDays)) / (trainingDays + restDays)),
+    delta: trainingDelta,
+    restDelta,
+    note: trainingDelta
+      ? 'Training hoger in koolhydraten, rust lager; eiwit blijft gelijk en weekgemiddelde blijft rond doel.'
+      : 'Calorie cycling staat op nul omdat het huidige kcal-doel te laag is voor een veilige rustdag-clamp.'
+  };
+}
+
+function macroTargetsFor(kcal, protein) {
+  const proteinKcal = protein * 4;
+  const remaining = Math.max(0, kcal - proteinKcal);
+  const preferredFat = Math.max(35, Math.round((remaining * 0.3) / 9));
+  const fat = remaining ? Math.min(preferredFat, Math.floor(remaining / 9)) : 0;
+  const carbs = Math.max(0, Math.round((remaining - fat * 9) / 4));
+  return { kcal, p: protein, c: carbs, f: fat };
 }
 
 // Calorie-trend vs gewichtstrend (#15 / roadmap-doel 45). Pure, deterministische
@@ -329,6 +377,58 @@ function missedTrainingDays(start, end) {
     if (!dayIsComplete(day)) missed.push(day);
   }
   return missed;
+}
+
+export function missedSessionRecoveryAdvice(day = todayNum(), lookbackDays = 14) {
+  const today = Math.max(1, Math.min(TOTAL_DAYS, Number(day) || todayNum()));
+  const from = Math.max(1, today - lookbackDays);
+  const missed = [];
+  for (let d = from; d < today; d++) {
+    const code = sessionFor(dateForDay(d));
+    if (!code.startsWith('K')) continue;
+    if (!dayIsComplete(d)) missed.push({ day: d, code });
+  }
+  if (!missed.length) return null;
+
+  const latest = missed[missed.length - 1];
+  const age = today - latest.day;
+  const multi = missed.length >= 2;
+  const label = latest.code === 'K1' ? 'push' : latest.code === 'K3' ? 'pull' : 'benen/calisthenics';
+
+  if (multi) {
+    return {
+      missed,
+      latest,
+      severity: 'high',
+      text: `${missed.length} krachtsessies gemist in ${lookbackDays} dagen. Stapel geen inhaalsessies; pak de eerstvolgende geplande krachttraining met 2 sets minder per grote lift.`,
+      recommendation: 'Ritme eerst: hervat met de eerstvolgende geplande krachtsessie, verlaag volume vandaag en haal geen gemiste sessies in.'
+    };
+  }
+  if (age <= 1) {
+    return {
+      missed,
+      latest,
+      severity: 'medium',
+      text: `Gisteren viel ${label} weg. Schuif door naar de eerstvolgende krachttraining en houd de eerste oefening 1 RIR ruimer.`,
+      recommendation: 'Niet inhalen: hervat de eerstvolgende krachtsessie normaal, maar start conservatief met 1 RIR extra op de hoofdlift.'
+    };
+  }
+  if (age <= 3) {
+    return {
+      missed,
+      latest,
+      severity: 'medium',
+      text: `${label} is ${age} dagen geleden gemist. Hervat volgens planning; voeg alleen volume toe als je na de hoofdsets fris bent.`,
+      recommendation: 'Hervat volgens planning en gebruik optioneel één extra back-off set, niet een volledige inhaalsessie.'
+    };
+  }
+  return {
+    missed,
+    latest,
+    severity: 'low',
+    text: `${label} is ouder dan 3 dagen. Laat die sessie liggen en bescherm je weekritme.`,
+    recommendation: 'Laat de oude gemiste sessie liggen; consistentie deze week is belangrijker dan volume terughalen.'
+  };
 }
 
 export function nutritionScoreForDay(day) {

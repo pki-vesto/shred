@@ -1,7 +1,7 @@
 import { state, saveState } from '../state.js';
 import { SESSIONS, sessionFor } from '../sessions.js';
 import { TOTAL_DAYS, dateForDay, todayNum, dayIsComplete, isHardcodedDeload, weekOf, resolveSlots, shortDate } from '../helpers.js';
-import { dashboardKpis, weeklyReview, macroWeeklySeries, goalPace, calorieVsWeight, nutritionScoreForDay, trainingHeatmapStatus, nutritionContextSplit, confLevel } from '../dashboardMetrics.js';
+import { dashboardKpis, weeklyReview, macroWeeklySeries, goalPace, calorieVsWeight, nutritionScoreForDay, trainingHeatmapStatus, nutritionContextSplit, calorieCyclingTargets, confLevel } from '../dashboardMetrics.js';
 import { confBadge, toast } from './components.js';
 import { weeklyVolume, kneeLoadForSession, weekPRSummary, weeklyVolumeSeries, prTimeline, PR_LABELS } from '../trainingMetrics.js';
 import { bodyComparison, buildReportPayload, isReportEmpty, phaseForDay, phaseRange, reportFilename, safeReportReplacer } from '../reportMetrics.js';
@@ -442,6 +442,7 @@ function renderProgressIntel() {
   const loggedWeeks = macro.filter(m => m.days > 0);
   const cvw = calorieVsWeight(today);
   const context = nutritionContextSplit(today);
+  const cycling = calorieCyclingTargets(state.goals);
   const contextDays = context.weekend.days + context.weekday.days;
 
   if (!pace.expected && !loggedWeeks.length && cvw.empty && !contextDays) { wrap.innerHTML = ''; return; }
@@ -532,7 +533,17 @@ function renderProgressIntel() {
       </div>`;
   }
 
+  const cyclingCard = `
+    <div class="ti-card">
+      <div class="ti-card-top">
+        <div><div class="ti-k">Calorie cycling</div><div class="ti-v">${cycling.training.kcal}<small> / ${cycling.rest.kcal}</small></div></div>
+        <span class="ti-delta flat">gem. ${cycling.weeklyAverageKcal}</span>
+      </div>
+      <div class="ti-sub">Training: P${cycling.training.p} C${cycling.training.c} F${cycling.training.f} · rust: P${cycling.rest.p} C${cycling.rest.c} F${cycling.rest.f}.</div>
+      <div class="ti-sub ti-muted">${cycling.note}</div>
+    </div>`;
+
   wrap.innerHTML = `
     <div class="ti-head"><h3>Voortgang &amp; tempo</h3><span>dag ${today}</span></div>
-    ${paceCard}${macroCard}${contextCard}${cvwCard}`;
+    ${paceCard}${macroCard}${contextCard}${cyclingCard}${cvwCard}`;
 }

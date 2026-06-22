@@ -30,6 +30,16 @@ Producten mogen verborgen worden als ze nog in logs voorkomen. Hard delete mag a
 
 Productzoek (toevoeg-sheet) rankt op matchkwaliteit (exact → prefix → woordbegin → deelstring) en daarbinnen op gebruik (`useCount`, `lastUsedAt`), zodat het bedoelde product bovenaan staat i.p.v. puur alfabetisch.
 
+Producten ondersteunen daarnaast handmatige labelmetadata:
+
+- `barcode`: optionele, handmatig overgenomen barcode zonder spaties/streepjes;
+- `labelText`: korte bron-/labelnotitie van de verpakking.
+
+Deze velden zijn onderdeel van het bestaande product-JSON-record en vragen geen
+schemawijziging. Productzoek matcht naast de naam ook op barcode en labeltekst,
+zodat verpakte producten later terug te vinden zijn op wat er op het etiket
+staat.
+
 ## Recepten En Templates
 
 Huidige meal templates bewaren:
@@ -68,6 +78,13 @@ Primaire doelen:
 - fat: default 65g.
 
 Compliance weegt calorieën en eiwit zwaarder dan carbs/fat. Voor recompositie is eiwitminimum belangrijker dan perfecte macroverdeling.
+
+`calorieCyclingTargets(goals, delta)` ontwerpt read-only trainingsdag- en
+rustdagtargets uit het huidige macrodoel. Eiwit blijft stabiel, trainingsdagen
+krijgen conservatief meer kcal/koolhydraten en rustdagen lager kcal met een
+veilige clamp. Het 7-daags gewogen gemiddelde blijft gelijk aan het basisdoel,
+zodat cycling geen automatische calorie-aanpassing is maar een uitvoeringsvorm
+van hetzelfde weekdoel.
 
 ## Maaltijdstructuur
 

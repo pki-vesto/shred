@@ -1,5 +1,7 @@
 import { state, saveState, mutate, wipeAll } from '../state.js';
 import { getStartDate, todayNum } from '../helpers.js';
+import { weightMetrics } from '../bodyMetrics.js';
+import { proteinPerKg } from '../dashboardMetrics.js';
 import { renderTopbar, toast } from './components.js';
 import { renderToday } from './today.js';
 import { getDiagnostics, onStatus, syncNow } from '../sync.js';
@@ -51,6 +53,9 @@ export function renderSettings() {
   ['kcal', 'p', 'c', 'f'].forEach(k => {
     document.getElementById('goal' + k[0].toUpperCase() + k.slice(1)).value = state.goals[k];
   });
+  const goalP = document.getElementById('goalP');
+  goalP.oninput = updateGoalPHint;
+  updateGoalPHint();
   document.getElementById('goalMaxHr').value = state.goals.maxHr || '';
   document.getElementById('saveGoals').onclick = () => {
     state.goals.kcal = +document.getElementById('goalKcal').value || 2250;
@@ -150,6 +155,31 @@ export function renderSettings() {
     await wipeAll();
     location.reload();
   };
+}
+
+function updateGoalPHint() {
+  const hint = document.getElementById('goalPHint');
+  const goalP = document.getElementById('goalP');
+  if (!hint || !goalP) return;
+
+  const metrics = weightMetrics(state.weights);
+  const gPerKg = proteinPerKg(parseNumericInput(goalP.value), metrics);
+  if (gPerKg === null || metrics.ewma === null) {
+    hint.textContent = '';
+    hint.hidden = true;
+    return;
+  }
+
+  hint.textContent = `= ${fmt1(gPerKg)} g/kg bij ${fmt1(metrics.ewma)} kg trend`;
+  hint.hidden = false;
+}
+
+function parseNumericInput(value) {
+  return Number(String(value || '').replace(',', '.'));
+}
+
+function fmt1(n) {
+  return Number(n).toFixed(1).replace('.', ',');
 }
 
 function downloadText(text, filename, type) {

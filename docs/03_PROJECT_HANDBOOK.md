@@ -25,20 +25,20 @@ Huidige geïmplementeerde hoofdfeatures:
 
 - 90-dagen programma met dagnummering vanaf `meta.startDate`.
 - Vandaag-tab met kracht/cardio/rustdag workflows.
-- Trainingsslots met default oefeningen en swaps per dag of per slot-default, met afgeleide equipment-chip per oefening.
+- Trainingsslots met default oefeningen, favoriete swap-varianten en swaps per dag of per slot-default, met afgeleide equipment-chip per oefening.
 - Oefeninghistorie per concrete `exerciseId`.
 - Setlogging met gewicht, reps, RIR-select en PR-detectie.
 - Dagcompletion en notities.
-- Voeding met productbibliotheek, macros per 100g, maaltijdcategorieën en versioned meal templates; gerankte productzoek (matchkwaliteit + gebruik).
+- Voeding met productbibliotheek, macros per 100g, optionele barcode/labelmetadata, maaltijdcategorieën en versioned meal templates; gerankte productzoek (matchkwaliteit + gebruik + barcode/label).
 - Product lookup via Claude Haiku met preview en confidence-indicator.
 - Voice meal logging via browser mic, Whisper en Claude, met confidence-pills en per-100g check voor nieuwe producten.
 - Offline voice queue in IndexedDB.
 - Body-tab met gewicht, foto's en trendberekeningen: EWMA-trendgewicht (ook als grafieklijn), plateau v2, weeg-consistentie en 2-weeks forecast.
 - Lichaamsmetingen (taille/heup/borst/arm/dij) als eigen sync-type `measurements`, met taille-trend en Health Core dual-write naar `body.*` (cm).
 - Cardio-logging (duur/RPE/gem. HR/intervallen) als eigen sync-type `cardio`, met zone-2 hartslagcontext (optionele max-HR) en dual-write naar `fitness.cardio_minutes`.
-- Overview/dashboard met week-KPI's (incl. confidence-badges) en een volledig weekrapport (training, lichaam, voeding, eiwit, herstel) met één concrete aanbeveling.
+- Overview/dashboard met week-KPI's (incl. confidence-badges) en een volledig weekrapport (training, lichaam, voeding, eiwit, herstel) met één concrete aanbeveling en deterministisch hersteladvies na gemiste krachtsessies.
 - Trainingsintelligentie op het Overzicht: weekvolume + per spiergroep met week-op-week delta, volume-trend per week, PR-tijdlijn (gewicht/reps/volume/e1RM) en kniebelasting per laatste krachtsessie met historie-stippen.
-- Voortgang & tempo op het Overzicht: goal-pace (sessies voltooid vs verwacht + dag-90 gewichtsprojectie) en macro-trend (gem. kcal per week vs doel).
+- Voortgang & tempo op het Overzicht: goal-pace (sessies voltooid vs verwacht + dag-90 gewichtsprojectie), macro-trend (gem. kcal per week vs doel) en read-only calorie cycling targets.
 - Sync tussen iPhone en Mac via `/api/sync` en `/api/photos`.
 - Health Core dual-write voor bodyweight, nutrition aggregates en session volume, met `GET /api/health/core` voor status + formuleversies.
 

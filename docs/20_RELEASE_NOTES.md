@@ -12,6 +12,14 @@ Recipe/template versioning (#51 — roadmap-doel 30).
 - Geselecteerde historische templateversies blijven exact toepasbaar.
 - Repeatable Node-test `tests/templateVersioning.test.mjs`.
 
+Barcode/label handmatige invoer (#47 — roadmap-doel 29).
+
+### Added
+- Optionele barcode- en label/bronvelden bij product aanmaken en bewerken.
+- Productzoek matcht nu ook op barcode en labeltekst naast productnaam.
+- Productrijen tonen compacte labelmetadata wanneer die aanwezig is.
+- Repeatable Node-test `tests/nutritionProductMetadata.test.mjs`.
+
 ### Operations
 - `CACHE_VERSION` `shred-v28` → `shred-v29` (`css/app.css`, `js/nutrition.js`, `js/ui/food.js` en `service-worker.js` gewijzigd).
 
@@ -20,6 +28,45 @@ Recipe/template versioning (#51 — roadmap-doel 30).
 - `node --check js/nutrition.js`
 - `node --check js/ui/food.js`
 - `node --check tests/templateVersioning.test.mjs`
+- `node --test tests/nutritionProductMetadata.test.mjs`
+- `node --check js/nutrition.js`
+- `node --check js/ui/food.js`
+
+Missed-session recovery advies (#45 — roadmap-doel 19).
+
+### Added
+- Deterministisch gemiste-krachtsessieadvies in het weekrapport: niet inhalen na één gemiste sessie, conservatief hervatten bij recente missers en volume verlagen wanneer meerdere krachtsessies zijn gemist.
+- `missedSessionRecoveryAdvice(day, lookbackDays)` als testbare helper in `js/dashboardMetrics.js`.
+- Repeatable Node-test `tests/missedSessionAdvice.test.mjs`.
+
+### Operations
+- `CACHE_VERSION` `shred-v28` → `shred-v29` (`js/dashboardMetrics.js` gewijzigd).
+
+### Verification
+- `node --test tests/missedSessionAdvice.test.mjs`
+- `node --check js/dashboardMetrics.js`
+- `node --check tests/missedSessionAdvice.test.mjs`
+
+- N2 Frontend metrics test runner: root `npm test` draait een `node --test` smoke-suite voor `bodyMetrics`, `trainingMetrics`, `dashboardMetrics` en `reportMetrics`.
+- N1 Aggregatie-parity: `api/core.js` exporteert de gedeelde Shred/Health Core-aggregatiehelpers expliciet en `api/test-aggregate-parity.mjs` vergelijkt nutrition/session-formules, units, external IDs en metadata tegen een Health Core-snapshot.
+- Testcommand: `npm --prefix api test` draait nu aggregate-parity, Health Core dual-write en sync-contract tests.
+
+Calorie cycling targets (#59 — roadmap-doel 37).
+
+### Added
+- Nieuwe pure helper `calorieCyclingTargets(goals, delta)` voor training/rust kcal- en macrotargets.
+- Overzicht toont read-only calorie-cycling guidance in `Voortgang & tempo`.
+- Cycling houdt eiwit stabiel en bewaart het 7-daags gemiddelde rond het basisdoel.
+- Repeatable Node-test `tests/calorieCyclingTargets.test.mjs`.
+
+### Operations
+- `CACHE_VERSION` `shred-v28` → `shred-v29` (`js/dashboardMetrics.js`, `js/ui/overview.js` en `service-worker.js` gewijzigd).
+
+### Verification
+- `node --test tests/calorieCyclingTargets.test.mjs`
+- `node --check js/dashboardMetrics.js`
+- `node --check js/ui/overview.js`
+- `node --check tests/calorieCyclingTargets.test.mjs`
 - `node --check service-worker.js`
 - `git diff --check`
 
