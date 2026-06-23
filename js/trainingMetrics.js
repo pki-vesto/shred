@@ -1,5 +1,6 @@
 import { state } from './state.js';
 import { CATEGORIES, exName, getExercise } from './exercises.js';
+import { getLastSession } from './helpers.js';
 
 export function setVolume(set) {
   return (parseFloat(set?.w) || 0) * (parseInt(set?.r) || 0);
@@ -152,6 +153,85 @@ export function sessionPRKinds(exId, day) {
 }
 
 export const PR_LABELS = { weight: 'PR kg', reps: 'PR reps', volume: 'PR volume', e1rm: 'PR e1RM' };
+
+// ---- Progressie-advies ------------------------------------------------------
+// Deterministisch rep-range-model: eerst reps binnen de range opbouwen, daarna
+// pas gewicht verhogen als RIR niet te laag is. Read-only: gebruikt alleen
+// bestaande set-historie en slot-prescriptie.
+
+const RIR_PROGRESS_MARGIN = 2;
+const DEFAULT_WEIGHT_STEP = 2.5;
+
+function parseRepRange(sr) {
+  const match = String(sr || '').match(/(\d+)\s*[-–]\s*(\d+)/);
+  if (!match) return null;
+  const min = parseInt(match[1], 10);
+  const max = parseInt(match[2], 10);
+  if (!Number.isFinite(min) || !Number.isFinite(max) || min <= 0 || max < min) return null;
+  return { min, max };
+}
+
+function formatKg(value) {
+  return Number.isInteger(value) ? String(value) : String(value).replace('.', ',');
+}
+
+function rirLabel(rir) {
+  return rir === null ? '' : ` @ RIR ${formatKg(rir)}`;
+}
+
+function topSetFromEntry(entry) {
+  let top = null;
+  for (const set of entry?.sets || []) {
+    const w = parseFloat(set?.w);
+    const r = parseInt(set?.r, 10);
+    if (!Number.isFinite(w) || !Number.isFinite(r) || w <= 0 || r <= 0) continue;
+    if (!top || w > top.w) {
+      const rawRir = set?.rir;
+      const rir = rawRir === '' || rawRir == null ? null : parseFloat(rawRir);
+      top = {
+        w,
+        r,
+        rir: Number.isFinite(rir) ? rir : null
+      };
+    }
+  }
+  return top;
+}
+
+export function progressionHint(slot, exId, beforeDay = Infinity) {
+  const range = parseRepRange(slot?.sr);
+  if (!range) return null;
+
+  const last = getLastSession(exId, beforeDay);
+  const top = topSetFromEntry(last);
+  if (!top) return null;
+
+  const previous = `${formatKg(top.w)}x${top.r}${rirLabel(top.rir)}`;
+  const rangeText = `${range.min}-${range.max}`;
+
+  if (top.r >= range.max && (top.rir === null || top.rir >= RIR_PROGRESS_MARGIN)) {
+    const target = top.w + DEFAULT_WEIGHT_STEP;
+    return {
+      action: 'increase_weight',
+      target,
+      reason: `Vorige: ${previous} - top van de range (${rangeText}) gehaald${top.rir === null ? '; RIR onbekend' : ` met RIR >= ${RIR_PROGRESS_MARGIN}`}, probeer ${formatKg(target)} kg`
+    };
+  }
+
+  if (top.r >= range.max && top.rir < RIR_PROGRESS_MARGIN) {
+    return {
+      action: 'hold_low_rir',
+      target: top.w,
+      reason: `Vorige: ${previous} - range-top (${rangeText}) gehaald, maar RIR was laag; blijf op ${formatKg(top.w)} kg`
+    };
+  }
+
+  return {
+    action: 'more_reps',
+    target: top.w,
+    reason: `Vorige: ${previous} - ${top.r}/${range.max} reps in range ${rangeText}; blijf op ${formatKg(top.w)} kg en mik op meer reps`
+  };
+}
 
 // ---- Weekvolume -------------------------------------------------------------
 // Programmaweken zijn blokken van 7 dagen: week N = dag (N-1)*7+1 .. N*7.

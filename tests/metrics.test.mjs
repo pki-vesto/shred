@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 import { state } from '../js/state.js';
 import { weightMetrics, measurementTrend } from '../js/bodyMetrics.js';
-import { sessionPRKinds, weeklyVolume, weeklyVolumeSeries, kneeLoadForSession } from '../js/trainingMetrics.js';
+import { sessionPRKinds, weeklyVolume, weeklyVolumeSeries, kneeLoadForSession, progressionHint } from '../js/trainingMetrics.js';
 import { dashboardKpis, macroWeeklySeries, nutritionContextSplit, calorieVsWeight, goalPace } from '../js/dashboardMetrics.js';
 import { bodyComparison, buildReportPayload, isReportEmpty, safeReportReplacer } from '../js/reportMetrics.js';
 
@@ -109,6 +109,38 @@ test('trainingMetrics smoke coverage summarizes volume, PRs, and knee load', () 
   ], 10);
   assert.equal(knee.band, 'high');
   assert.ok(knee.contributors.some(c => c.exId === 'bulgarian_split' && c.unsafe));
+});
+
+test('progressionHint gives deterministic rep-range and RIR advice', () => {
+  seedState();
+
+  state.sets.bench = [{ day: 1, sets: [{ w: 80, r: 8, rir: 2 }] }];
+  let hint = progressionHint({ sr: '4 x 6-8' }, 'bench', 8);
+  assert.equal(hint.action, 'increase_weight');
+  assert.equal(hint.target, 82.5);
+  assert.match(hint.reason, /top van de range \(6-8\)/);
+  assert.match(hint.reason, /probeer 82,5 kg/);
+
+  state.sets.bench = [{ day: 1, sets: [{ w: 80, r: 8, rir: 1 }] }];
+  hint = progressionHint({ sr: '4 x 6-8' }, 'bench', 8);
+  assert.equal(hint.action, 'hold_low_rir');
+  assert.equal(hint.target, 80);
+  assert.match(hint.reason, /RIR was laag/);
+
+  state.sets.bench = [{ day: 1, sets: [{ w: 80, r: 6, rir: 1 }] }];
+  hint = progressionHint({ sr: '4 x 6-8' }, 'bench', 8);
+  assert.equal(hint.action, 'more_reps');
+  assert.equal(hint.target, 80);
+  assert.match(hint.reason, /mik op meer reps/);
+
+  state.sets.bench = [{ day: 1, sets: [{ w: 80, r: 8, rir: '' }] }];
+  hint = progressionHint({ sr: '4 x 6-8' }, 'bench', 8);
+  assert.equal(hint.action, 'increase_weight');
+  assert.match(hint.reason, /RIR onbekend/);
+
+  assert.equal(progressionHint({ sr: '4 x submax' }, 'bench', 8), null);
+  assert.equal(progressionHint({ sr: '15 min' }, 'bench', 8), null);
+  assert.equal(progressionHint({ sr: '4 x 6-8' }, 'unknown', 8), null);
 });
 
 test('dashboardMetrics smoke coverage builds KPIs and nutrition context', () => {
