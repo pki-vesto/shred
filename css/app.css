@@ -181,6 +181,7 @@ button{font-family:inherit;}
 .ex-last:active{opacity:.55;}
 .ex-last.empty{color:var(--text-4);font-weight:500;cursor:default;}
 .ex-last svg{width:13px;height:13px;stroke:var(--green);stroke-width:2;fill:none;}
+.ex-hint{color:var(--text-3);font-size:12px;line-height:1.35;margin-top:2px;}
 .exl-ico{display:inline-flex;flex-shrink:0;}
 .ex-trend{font-weight:800;font-size:13px;line-height:1;}
 .ex-trend.up{color:var(--green);}

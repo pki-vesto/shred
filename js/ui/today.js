@@ -3,7 +3,7 @@ import { SESSIONS, sessionFor } from '../sessions.js';
 import { dateForDay, formatDate, weekOf, isHardcodedDeload, isCurrentWeekDeload, TOTAL_DAYS, todayNum, dayIsComplete, resolveSlots, getLastSession, volumeTrend, shortDate } from '../helpers.js';
 import { renderTopbar, toast, progressRing, popCheck, celebrate, tick, CHECK_SVG } from './components.js';
 import { openSwapSheet } from './swap.js';
-import { exerciseSummary, prForSet, sessionSummary } from '../trainingMetrics.js';
+import { exerciseSummary, prForSet, progressionHint, sessionSummary } from '../trainingMetrics.js';
 
 const KICKERS = { training: 'Krachttraining', cardio: 'Cardio', rest: 'Herstel' };
 const REFRESH_SVG = '<svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 4v4h4"/></svg>';
@@ -47,6 +47,7 @@ export function renderToday() {
     items.forEach((ex, i) => {
       const done = state.completed[n]?.['ex' + i] === true;
       const last = getLastSession(ex.exId, n);
+      const hint = progressionHint(ex, ex.exId, n);
       html += `<li class="ex-item ${done ? 'done' : ''}" data-ex-idx="${i}" data-ex-id="${ex.exId}" data-slot-id="${ex.slotId}">
         <div class="ex-head">
           <div class="ex-check" data-toggle-done="1"><span class="check-ring"></span>${CHECK_SVG}</div>
@@ -58,6 +59,7 @@ export function renderToday() {
             </button>
             <div class="ex-meta"><span class="ex-sr">${ex.sr}</span> · rust ${ex.rest}${ex.equipment ? ` <span class="ex-equip">${ex.equipment}</span>` : ''}</div>
             ${lastLineHtml(ex, last, n)}
+            ${hint ? `<div class="ex-hint" data-hint-action="${hint.action}">${hint.reason}</div>` : ''}
           </div>
           <button class="ex-toggle" data-toggle-log="1">Log</button>
         </div>
